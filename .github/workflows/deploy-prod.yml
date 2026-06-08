@@ -1,13 +1,14 @@
 name: Deploy Prod
 
 on:
+  push:
+    branches:
+      - main
   workflow_run:
     workflows:
       - CI
     types:
       - completed
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       image_sha:
@@ -22,7 +23,9 @@ concurrency:
 jobs:
   deploy:
     if: |
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'push') ||
       github.event_name == 'workflow_dispatch'
@@ -42,6 +45,32 @@ jobs:
           else
             echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Wait for image tag in registry
+        shell: bash
+        run: |
+          IMAGE="${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}"
+          echo "Waiting for image: $IMAGE"
+
+          for i in {1..30}; do
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "Image is available."
+              exit 0
+            fi
+
+            echo "Image not available yet (attempt $i/30), waiting 20s..."
+            sleep 20
+          done
+
+          echo "::error::Image $IMAGE was not found after waiting."
+          exit 1
 
       - name: Deploy container image to Azure Web App (prod)
         id: deploy-to-webapp
