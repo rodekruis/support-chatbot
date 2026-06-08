@@ -1,0 +1,52 @@
+[project]
+name = "support-chatbot"
+version = "0.0.1"
+description = "Level 1 support chatbot for 510 products and services"
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+authors = [
+  { name = "Jacopo Margutti", email = "jmargutti@redcross.nl" }
+]
+dependencies = [
+  "azure-search-documents",
+  "azure-identity",
+  "beautifulsoup4",
+  "chromadb",
+  "fastapi",
+  "gunicorn",
+  "httpx",
+  "langchain",
+  "langchain-community>=0.3.27",
+  "langchain-openai",
+  "langgraph",
+  "lxml",
+  "markdownify",
+  "pandas",
+  "pydantic-settings",
+  "python-dotenv",
+  "spacy",
+  "streamlit",
+  "uvicorn",
+  "urllib3>=2.6.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "pytest-cov>=5.0.0",
+  "ruff>=0.6.0",
+]
+
+[project.urls]
+Repository = "https://github.com/rodekruis/support-chatbot"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["support_chatbot*"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
