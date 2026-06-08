@@ -1,21 +1,34 @@
+"""Shared pytest fixtures for support_chatbot tests."""
+
 import pytest
 from fastapi.testclient import TestClient
 
 from support_chatbot.api.app import create_app
+from support_chatbot.services.vector_store_service import ManualUpdateResult
 from support_chatbot.settings import AppSettings
 
 
 class FakeChatService:
-    def ask(self, question: str, thread_id: str) -> str:
-        return f"echo:{question}:{thread_id}"
+    """Minimal chat service double used by route tests."""
+
+    def ask(self, question: str, thread_id: str, manual_id: str | None = None) -> str:
+        """Echo the request arguments in a predictable response."""
+        return f"echo:{question}:{thread_id}:{manual_id}"
 
 
 class FakeVectorStoreService:
-    def update_from_manual(self) -> int:
-        return 3
+    """Minimal vector store service double used by route tests."""
+
+    def update_from_manual(self, manual_id: str | None = None) -> ManualUpdateResult:
+        """Return a predictable indexing summary for assertions."""
+        return ManualUpdateResult(
+            documents_indexed=3,
+            index_name=f"support-chatbot-index-{manual_id or '121'}",
+        )
 
 
 def build_test_settings() -> AppSettings:
+    """Build the static settings object used by the test app."""
     return AppSettings.model_validate(
         {
             "PORT": 8000,
@@ -35,6 +48,7 @@ def build_test_settings() -> AppSettings:
 
 @pytest.fixture
 def client() -> TestClient:
+    """Return a TestClient wired with fake services."""
     app = create_app(
         settings=build_test_settings(),
         chat_service_factory=lambda _: FakeChatService(),

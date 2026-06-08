@@ -1,3 +1,5 @@
+"""FastAPI routes for chat, admin, and health endpoints."""
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 
@@ -21,6 +23,7 @@ router = APIRouter()
 
 @router.get("/", include_in_schema=False)
 async def docs_redirect() -> RedirectResponse:
+    """Redirect the root path to the interactive API docs."""
     return RedirectResponse(url="/docs")
 
 
@@ -31,8 +34,13 @@ async def ask_question(
     _: None = Depends(require_read_key),
     chat_service=Depends(get_chat_service),
 ) -> QuestionResponse:
+    """Ask the chatbot a question and return the generated answer."""
     client_host = request.client.host if request.client else "unknown"
-    answer = chat_service.ask(payload.question, thread_id=client_host)
+    answer = chat_service.ask(
+        payload.question,
+        thread_id=client_host,
+        manual_id=payload.manual_id,
+    )
     return QuestionResponse(answer=answer)
 
 
@@ -42,20 +50,22 @@ async def ask_question(
     tags=["admin"],
 )
 async def update_vector_store(
+    manual_id: str | None = None,
     _: None = Depends(require_write_key),
     vector_store_service=Depends(get_vector_store_service),
-    settings: AppSettings = Depends(get_settings),
 ) -> UpdateVectorStoreResponse:
-    documents_indexed = vector_store_service.update_from_manual()
+    """Rebuild the vector store from the configured manual."""
+    result = vector_store_service.update_from_manual(manual_id)
     return UpdateVectorStoreResponse(
         message="Vector store successfully updated.",
-        documents_indexed=documents_indexed,
-        index_name=settings.vector_store_id,
+        documents_indexed=result.documents_indexed,
+        index_name=result.index_name,
     )
 
 
 @router.get("/get-models", response_model=ModelsResponse, tags=["system"])
 async def get_models(settings: AppSettings = Depends(get_settings)) -> ModelsResponse:
+    """Return the configured chat and embedding model names."""
     return ModelsResponse(
         chatbot=settings.model_chat, embeddings=settings.model_embeddings
     )
@@ -63,4 +73,5 @@ async def get_models(settings: AppSettings = Depends(get_settings)) -> ModelsRes
 
 @router.get("/health", tags=["system"])
 async def health() -> dict[str, str]:
+    """Return a simple health-check response."""
     return {"status": "ok"}

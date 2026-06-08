@@ -1,3 +1,5 @@
+"""Application factory and FastAPI configuration."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -8,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from support_chatbot import __version__
-from support_chatbot.adapters.vector_store import build_vector_store_bundle
+from support_chatbot.adapters.vector_store import VectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
 from support_chatbot.api.middleware import RequestIdMiddleware, RequestLoggingMiddleware
 from support_chatbot.api.routes import router
@@ -40,6 +42,7 @@ def create_app(
     chat_service_factory=None,
     vector_store_service_factory=None,
 ) -> FastAPI:
+    """Build and configure the FastAPI application."""
     app_settings = settings or AppSettings()
 
     @asynccontextmanager
@@ -47,31 +50,25 @@ def create_app(
         _setup_logging()
         app.state.settings = app_settings
 
-        vector_bundle = None
+        provider = None
         if chat_service_factory is None or vector_store_service_factory is None:
-            vector_bundle = build_vector_store_bundle(app_settings)
+            provider = VectorStoreProvider(app_settings)
 
         if chat_service_factory is None:
-            if vector_bundle is None:
+            if provider is None:
                 raise RuntimeError(
-                    "Vector store bundle is required for default chat service"
+                    "Vector store provider is required for default chat service"
                 )
-            app.state.chat_service = ChatService(
-                app_settings, vector_bundle.vector_store
-            )
+            app.state.chat_service = ChatService(app_settings, provider)
         else:
             app.state.chat_service = chat_service_factory(app_settings)
 
         if vector_store_service_factory is None:
-            if vector_bundle is None:
+            if provider is None:
                 raise RuntimeError(
-                    "Vector store bundle is required for default vector store service"
+                    "Vector store provider is required for default vector store service"
                 )
-            app.state.vector_store_service = VectorStoreService(
-                app_settings,
-                vector_bundle.vector_store,
-                vector_bundle.index_client,
-            )
+            app.state.vector_store_service = VectorStoreService(app_settings, provider)
         else:
             app.state.vector_store_service = vector_store_service_factory(app_settings)
 

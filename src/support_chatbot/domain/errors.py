@@ -1,3 +1,6 @@
+"""Domain-specific exception types."""
+
+
 class DomainError(Exception):
     """Base class for domain-level errors."""
 

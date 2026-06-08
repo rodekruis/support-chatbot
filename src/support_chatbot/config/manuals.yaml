@@ -1,0 +1,19 @@
+﻿manuals:
+  "121":
+    root_url: "https://manual.121.global/en/"
+    base_url: "https://manual.121.global/en/"
+    exclude_dirs:
+      - "https://manual.121.global/en/nlrc"
+    # Optional: split documents into chunks for indexing. Omit both to index
+    # whole documents without splitting, i.e. one document = one page.
+    chunk_size: 1000
+    chunk_overlap: 200
+    # Optional: remove navigation/header/footer text shared across pages.
+    # A line is treated as boilerplate when it appears in at least
+    # boilerplate_threshold (0..1) of the pages. Defaults: true / 0.9.
+    strip_boilerplate: true
+    boilerplate_threshold: 0.9
+    # Optional: per-manual system prompt, relative to the support_chatbot
+    # package (e.g. "prompts/manual_121.md"). Falls back to the default
+    # prompt at prompts/support_chatbot_prompt.md when omitted.
+    # prompt_file: "prompts/manual_121.md"

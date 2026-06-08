@@ -20,6 +20,43 @@ Edit the provided [ENV-variables](./example.env) accordingly.
 
 Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh) require `AUTH_API_KEY_WRITE`.
 
+### Manuals
+
+The chatbot can serve multiple manuals (documentation sites). Each manual is
+defined in [`manuals.yaml`](./src/support_chatbot/config/manuals.yaml) with the
+URLs to scrape, chunking settings, and an optional per-manual system prompt:
+
+```yaml
+manuals:
+  "121":
+    root_url: "https://manual.121.global/en/"
+    base_url: "https://manual.121.global/en/"
+    exclude_dirs:
+      - "https://manual.121.global/en/nlrc"
+    chunk_size: 1000
+    chunk_overlap: 200
+    # Optional: a Markdown prompt relative to the support_chatbot package.
+    # Falls back to prompts/support_chatbot_prompt.md when omitted.
+    # prompt_file: "prompts/manual_121.md"
+```
+
+To add a manual: add an entry to `manuals.yaml`, optionally add a prompt
+Markdown file under [`prompts/`](./src/support_chatbot/prompts/), then index it
+(see below).
+
+Each manual is stored in its own search index named
+`{VECTOR_STORE_ID}-{manual_id}` (e.g. `support-chatbot-index-121`). Both `/ask`
+and `/update-vector-store` accept an optional `manual_id` (defaults to `121`):
+
+- `POST /ask` — body `{"question": "...", "manual_id": "121"}`. Selects the
+  manual's prompt and searches its index.
+- `POST /update-vector-store?manual_id=121` — scrapes the manual and rebuilds
+  its index.
+
+> **Migration:** index naming changed from `{VECTOR_STORE_ID}` to
+> `{VECTOR_STORE_ID}-{manual_id}`. Run `POST /update-vector-store?manual_id=121`
+> once to populate the new index; the old index can then be deleted.
+
 ### Run locally
 
 First initialize the API

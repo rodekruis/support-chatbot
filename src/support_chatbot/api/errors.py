@@ -1,3 +1,5 @@
+"""Exception handlers and API error responses."""
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -18,6 +20,8 @@ def _error_response(
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    """Register API-wide exception handlers on the application."""
+
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
         return _error_response(422, "validation_error", str(exc), request)

@@ -16,12 +16,13 @@ dependencies = [
   "gunicorn",
   "httpx",
   "langchain",
-  "langchain-community>=0.3.27",
+  "langchain-docling",
   "langchain-openai",
   "langgraph",
   "lxml",
   "markdownify",
   "pandas",
+  "pyyaml>=6.0",
   "pydantic-settings",
   "python-dotenv",
   "spacy",
@@ -46,6 +47,10 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["support_chatbot*"]
+
+[tool.setuptools.package-data]
+"support_chatbot" = ["prompts/*.md"]
+"support_chatbot.config" = ["*.yaml"]
 
 [build-system]
 requires = ["setuptools>=68"]
