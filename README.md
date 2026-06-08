@@ -1,16 +1,14 @@
 # support-chatbot
 
-<img width="250" src="https://github.com/user-attachments/assets/faf65773-f731-44cb-a145-ea0f30cea58f" />
-
-Chat with [121 user manual](https://manual.121.global). You can try it out at [support-chatbot.streamlit.app](https://support-chatbot.streamlit.app/).
+Provides level-1 support for 510's products and services.
  
 ## Description
 
-Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API to serve a chatbot for [121](https://github.com/global-121). Based on [langchain](https://github.com/langchain-ai/langchain) and OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
+Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) and OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ## API Usage
 
-See [the docs](https://hia-chatbot.azurewebsites.net/docs).
+See [the docs](https://support-chatbot.azurewebsites.net/docs).
 
 ### Configuration
 
