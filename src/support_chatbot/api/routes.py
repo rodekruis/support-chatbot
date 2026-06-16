@@ -5,17 +5,18 @@ from fastapi.responses import RedirectResponse
 
 from support_chatbot.api.dependencies import (
     get_chat_service,
+    get_ingestion_service,
     get_settings,
-    get_vector_store_service,
     require_read_key,
     require_write_key,
 )
 from support_chatbot.api.schemas import (
+    IngestManualResponse,
     ModelsResponse,
     QuestionRequest,
     QuestionResponse,
-    UpdateVectorStoreResponse,
 )
+from support_chatbot.domain.models import AskRequest, IngestManualRequest
 from support_chatbot.settings import AppSettings
 
 router = APIRouter()
@@ -36,27 +37,29 @@ async def ask_question(
 ) -> QuestionResponse:
     """Ask the chatbot a question and return the generated answer."""
     client_host = request.client.host if request.client else "unknown"
-    answer = chat_service.ask(
-        payload.question,
-        thread_id=client_host,
-        manual_id=payload.manual_id,
+    result = chat_service.ask(
+        AskRequest(
+            question=payload.question,
+            thread_id=client_host,
+            manual_id=payload.manual_id,
+        )
     )
-    return QuestionResponse(answer=answer)
+    return QuestionResponse(answer=result.answer)
 
 
 @router.post(
-    "/update-vector-store",
-    response_model=UpdateVectorStoreResponse,
+    "/ingest-manual",
+    response_model=IngestManualResponse,
     tags=["admin"],
 )
-async def update_vector_store(
-    manual_id: str | None = None,
+async def ingest_manual(
+    manual_id: str,
     _: None = Depends(require_write_key),
-    vector_store_service=Depends(get_vector_store_service),
-) -> UpdateVectorStoreResponse:
+    ingestion_service=Depends(get_ingestion_service),
+) -> IngestManualResponse:
     """Rebuild the vector store from the configured manual."""
-    result = vector_store_service.update_from_manual(manual_id)
-    return UpdateVectorStoreResponse(
+    result = ingestion_service.ingest(IngestManualRequest(manual_id=manual_id))
+    return IngestManualResponse(
         message="Vector store successfully updated.",
         documents_indexed=result.documents_indexed,
         index_name=result.index_name,
@@ -66,9 +69,7 @@ async def update_vector_store(
 @router.get("/get-models", response_model=ModelsResponse, tags=["system"])
 async def get_models(settings: AppSettings = Depends(get_settings)) -> ModelsResponse:
     """Return the configured chat and embedding model names."""
-    return ModelsResponse(
-        chatbot=settings.model_chat, embeddings=settings.model_embeddings
-    )
+    return ModelsResponse(chatbot=settings.model_chat, embeddings=settings.model_embeddings)
 
 
 @router.get("/health", tags=["system"])

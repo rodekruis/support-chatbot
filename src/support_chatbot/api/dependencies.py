@@ -20,9 +20,9 @@ def get_chat_service(request: Request):
     return request.app.state.chat_service
 
 
-def get_vector_store_service(request: Request):
-    """Return the initialized vector store service."""
-    return request.app.state.vector_store_service
+def get_ingestion_service(request: Request):
+    """Return the initialized manual ingestion service."""
+    return request.app.state.ingestion_service
 
 
 def _require_key(provided_key: str | None, expected_key: str, code: str) -> None:

@@ -6,16 +6,12 @@ from fastapi.responses import JSONResponse
 from support_chatbot.api.schemas import ErrorResponse
 
 
-def _error_response(
-    status_code: int, code: str, message: str, request: Request
-) -> JSONResponse:
+def _error_response(status_code: int, code: str, message: str, request: Request) -> JSONResponse:
     request_id = None
     if hasattr(request, "state"):
         request_id = getattr(request.state, "request_id", None)
 
-    payload = ErrorResponse(
-        error={"code": code, "message": message, "request_id": request_id}
-    )
+    payload = ErrorResponse(error={"code": code, "message": message, "request_id": request_id})
     return JSONResponse(status_code=status_code, content=payload.model_dump())
 
 
@@ -28,6 +24,4 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def generic_error_handler(request: Request, exc: Exception):
-        return _error_response(
-            500, "internal_error", "An unexpected error occurred", request
-        )
+        return _error_response(500, "internal_error", "An unexpected error occurred", request)

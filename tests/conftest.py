@@ -4,26 +4,33 @@ import pytest
 from fastapi.testclient import TestClient
 
 from support_chatbot.api.app import create_app
-from support_chatbot.services.vector_store_service import ManualUpdateResult
+from support_chatbot.domain.models import (
+    AskRequest,
+    AskResponse,
+    IngestManualRequest,
+    IngestManualResponse,
+)
 from support_chatbot.settings import AppSettings
 
 
 class FakeChatService:
     """Minimal chat service double used by route tests."""
 
-    def ask(self, question: str, thread_id: str, manual_id: str | None = None) -> str:
+    def ask(self, request: AskRequest) -> AskResponse:
         """Echo the request arguments in a predictable response."""
-        return f"echo:{question}:{thread_id}:{manual_id}"
+        return AskResponse(
+            answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}"
+        )
 
 
-class FakeVectorStoreService:
-    """Minimal vector store service double used by route tests."""
+class FakeIngestionService:
+    """Minimal manual ingestion service double used by route tests."""
 
-    def update_from_manual(self, manual_id: str | None = None) -> ManualUpdateResult:
+    def ingest(self, request: IngestManualRequest) -> IngestManualResponse:
         """Return a predictable indexing summary for assertions."""
-        return ManualUpdateResult(
+        return IngestManualResponse(
             documents_indexed=3,
-            index_name=f"support-chatbot-index-{manual_id or '121'}",
+            index_name=f"support-chatbot-index-{request.manual_id}",
         )
 
 
@@ -52,7 +59,7 @@ def client() -> TestClient:
     app = create_app(
         settings=build_test_settings(),
         chat_service_factory=lambda _: FakeChatService(),
-        vector_store_service_factory=lambda _: FakeVectorStoreService(),
+        ingestion_service_factory=lambda _: FakeIngestionService(),
     )
     with TestClient(app) as test_client:
         yield test_client

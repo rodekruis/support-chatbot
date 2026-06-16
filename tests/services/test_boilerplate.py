@@ -2,7 +2,7 @@
 
 from langchain_core.documents import Document
 
-from support_chatbot.services.vector_store_service import strip_shared_boilerplate
+from support_chatbot.adapters.document_loader import strip_shared_boilerplate
 
 SHARED_HEADER = ["121 Platform User Manual", "Skip to content", "* General"]
 SHARED_FOOTER = ["Was this page helpful?", "Back to top"]

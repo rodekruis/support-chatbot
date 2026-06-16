@@ -9,30 +9,15 @@ documents are indexed without splitting. Definitions live in the
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
 
 import yaml
 
-DEFAULT_MANUAL_ID = "121"
+from support_chatbot.domain.models import ManualConfig
+
 _MANUALS_RESOURCE = "manuals.yaml"
 _DEFAULT_PROMPT_FILE = "prompts/support_chatbot_prompt.md"
-
-
-@dataclass(frozen=True)
-class ManualConfig:
-    """Configuration for a single manual source and its indexing behavior."""
-
-    manual_id: str
-    root_url: str
-    base_url: str
-    exclude_dirs: tuple[str, ...]
-    chunk_size: int | None = None
-    chunk_overlap: int | None = None
-    prompt_file: str | None = None
-    strip_boilerplate: bool = True
-    boilerplate_threshold: float = 0.9
 
 
 @lru_cache(maxsize=1)
@@ -51,9 +36,7 @@ def _load_registry() -> dict[str, ManualConfig]:
     registry: dict[str, ManualConfig] = {}
     for manual_id, item in manuals.items():
         if not isinstance(item, dict):
-            raise ValueError(
-                f"Invalid manual config for '{manual_id}': value must be a mapping"
-            )
+            raise ValueError(f"Invalid manual config for '{manual_id}': value must be a mapping")
 
         chunk_size = item.get("chunk_size")
         chunk_overlap = item.get("chunk_overlap")
@@ -88,9 +71,7 @@ def get_manual_config(manual_id: str) -> ManualConfig:
         return registry[manual_id]
     except KeyError as exc:
         valid = ", ".join(sorted(registry))
-        raise ValueError(
-            f"Unknown manual_id: {manual_id!r}. Valid options: {valid}"
-        ) from exc
+        raise ValueError(f"Unknown manual_id: {manual_id!r}. Valid options: {valid}") from exc
 
 
 def get_manual_prompt(manual_id: str) -> str:
@@ -101,8 +82,4 @@ def get_manual_prompt(manual_id: str) -> str:
     prompt files ship with the package.
     """
     prompt_file = get_manual_config(manual_id).prompt_file or _DEFAULT_PROMPT_FILE
-    return (
-        resources.files("support_chatbot")
-        .joinpath(prompt_file)
-        .read_text(encoding="utf-8")
-    )
+    return resources.files("support_chatbot").joinpath(prompt_file).read_text(encoding="utf-8")

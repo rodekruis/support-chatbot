@@ -11,23 +11,24 @@ from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
+    SearchableField,
     SearchField,
     SearchFieldDataType,
     SearchIndex,
-    SearchableField,
     SimpleField,
     VectorSearch,
     VectorSearchProfile,
 )
 from azure.search.documents.models import VectorizedQuery
-from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 
+from support_chatbot.domain.models import Document
+from support_chatbot.domain.ports import VectorStore, VectorStoreProvider
 from support_chatbot.settings import AppSettings
 
 
 @dataclass
-class AzureVectorStore:
+class AzureVectorStore(VectorStore):
     """Minimal vector store wrapper using Azure AI Search native SDK."""
 
     endpoint: str
@@ -49,9 +50,7 @@ class AzureVectorStore:
         fields = [
             SimpleField(name="id", type=SearchFieldDataType.String, key=True),
             SearchableField(name="content", type=SearchFieldDataType.String),
-            SimpleField(
-                name="source", type=SearchFieldDataType.String, filterable=True
-            ),
+            SimpleField(name="source", type=SearchFieldDataType.String, filterable=True),
             SimpleField(name="metadata_json", type=SearchFieldDataType.String),
             SearchField(
                 name="content_vector",
@@ -130,13 +129,11 @@ class AzureVectorStore:
             source = result.get("source")
             if source and "source" not in metadata:
                 metadata["source"] = source
-            docs.append(
-                Document(page_content=result.get("content", ""), metadata=metadata)
-            )
+            docs.append(Document(page_content=result.get("content", ""), metadata=metadata))
         return docs
 
 
-class VectorStoreProvider:
+class AzureVectorStoreProvider(VectorStoreProvider):
     """Provides one Azure Search index per manual.
 
     Each manual is stored in its own index named ``{vector_store_id}-{manual_id}``
@@ -162,14 +159,13 @@ class VectorStoreProvider:
         )
         self._stores: dict[str, AzureVectorStore] = {}
 
-    @property
-    def index_client(self) -> SearchIndexClient:
-        """Return the shared Azure Search index client."""
-        return self._index_client
-
     def index_name(self, manual_id: str) -> str:
         """Return the Azure Search index name for a manual."""
         return f"{self._settings.vector_store_id}-{manual_id}"
+
+    def delete_index(self, manual_id: str) -> None:
+        """Delete the Azure Search index backing a manual."""
+        self._index_client.delete_index(self.index_name(manual_id))
 
     def get_store(self, manual_id: str) -> AzureVectorStore:
         """Return the cached vector store for a manual, creating it if needed."""

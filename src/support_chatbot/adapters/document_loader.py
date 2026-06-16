@@ -1,11 +1,10 @@
-"""Manual ingestion service for building Azure AI Search indexes."""
+"""Docling-based document loader and splitter adapter."""
 
 from __future__ import annotations
 
-from collections import deque
 import re
+from collections import deque
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from urllib.parse import urldefrag, urljoin, urlparse
 
 import httpx
@@ -13,19 +12,8 @@ from bs4 import BeautifulSoup
 from langchain_docling.loader import DoclingLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from support_chatbot.config.manuals import DEFAULT_MANUAL_ID, get_manual_config
-
-if TYPE_CHECKING:
-    from support_chatbot.adapters.vector_store import VectorStoreProvider
-    from support_chatbot.settings import AppSettings
-
-
-@dataclass(frozen=True)
-class ManualUpdateResult:
-    """Summary of a manual indexing run."""
-
-    documents_indexed: int
-    index_name: str
+from support_chatbot.domain.models import Document, ManualConfig
+from support_chatbot.domain.ports import DocumentLoader
 
 
 def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
@@ -67,7 +55,7 @@ def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
 
 
 def _collapse_blank_lines(text: str) -> str:
-    """Collapse runs of blank lines or lines with only spaces into a single blank line and trim ends."""
+    """Collapse runs of blank or whitespace-only lines into one blank line and trim ends."""
     return re.sub(r"\n[^\S\n]*(?:\n[^\S\n]*)+", "\n\n", text).strip()
 
 
@@ -163,47 +151,46 @@ def _crawl_manual_urls(
     return urls
 
 
-class VectorStoreService:
-    """Crawl a manual, convert its pages, and index the resulting documents."""
+@dataclass
+class DoclingDocumentLoader(DocumentLoader):
+    """Crawl manuals with httpx/BeautifulSoup and convert pages via Docling."""
 
-    def __init__(
-        self,
-        settings: AppSettings,
-        provider: VectorStoreProvider,
-        default_manual_id: str = DEFAULT_MANUAL_ID,
-    ) -> None:
-        """Store the dependencies needed to refresh a manual index."""
-        self._settings = settings
-        self._provider = provider
-        self._default_manual_id = default_manual_id
+    export_type: str = "markdown"
+    max_pages: int = 500
 
-    def update_from_manual(self, manual_id: str | None = None) -> ManualUpdateResult:
-        """Refresh the vector store for a manual and return the indexing summary."""
-        manual_id = manual_id or self._default_manual_id
-        manual_config = get_manual_config(manual_id)
-        index_name = self._provider.index_name(manual_id)
-
+    def load(self, config: ManualConfig) -> list[Document]:
+        """Crawl the manual, convert each page, and strip boilerplate links."""
         urls = _crawl_manual_urls(
-            manual_config.root_url,
-            manual_config.base_url,
-            manual_config.exclude_dirs,
+            config.root_url,
+            config.base_url,
+            config.exclude_dirs,
+            self.max_pages,
         )
-        docs = DoclingLoader(file_path=urls, export_type="markdown").load()
-        docs = strip_relative_paths(list(docs))
-
-        if manual_config.strip_boilerplate:
-            docs = strip_shared_boilerplate(
-                list(docs), manual_config.boilerplate_threshold
+        docs = DoclingLoader(file_path=urls, export_type=self.export_type).load()
+        domain_docs = [
+            Document(page_content=doc.page_content, metadata=dict(doc.metadata or {}))
+            for doc in docs
+        ]
+        domain_docs = strip_relative_paths(domain_docs)
+        if config.strip_boilerplate:
+            domain_docs = strip_shared_boilerplate(
+                domain_docs, config.boilerplate_threshold
             )
+        return domain_docs
 
-        if manual_config.chunk_size is not None:
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=manual_config.chunk_size,
-                chunk_overlap=manual_config.chunk_overlap or 0,
-                add_start_index=True,
+    def split(
+        self, docs: list[Document], chunk_size: int, chunk_overlap: int
+    ) -> list[Document]:
+        """Split documents into overlapping chunks with start-index metadata."""
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            add_start_index=True,
+        )
+        chunks = splitter.split_documents(docs)
+        return [
+            Document(
+                page_content=chunk.page_content, metadata=dict(chunk.metadata or {})
             )
-            docs = splitter.split_documents(docs)
-
-        self._provider.index_client.delete_index(index_name)
-        self._provider.get_store(manual_id).add_documents(docs)
-        return ManualUpdateResult(documents_indexed=len(docs), index_name=index_name)
+            for chunk in chunks
+        ]

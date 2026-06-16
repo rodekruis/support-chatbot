@@ -1,1 +1,1 @@
-"""Domain-level error types for support_chatbot."""
+"""Domain core: models, ports, and errors for support_chatbot."""

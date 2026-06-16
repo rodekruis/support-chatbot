@@ -10,8 +10,9 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from support_chatbot.adapters.vector_store import VectorStoreProvider
-from support_chatbot.config.manuals import DEFAULT_MANUAL_ID, get_manual_prompt
+from support_chatbot.config.manuals import get_manual_prompt
+from support_chatbot.domain.models import AskRequest, AskResponse
+from support_chatbot.domain.ports import VectorStoreProvider
 from support_chatbot.settings import AppSettings
 
 
@@ -28,11 +29,9 @@ class ChatService:
         self,
         settings: AppSettings,
         provider: VectorStoreProvider,
-        default_manual_id: str = DEFAULT_MANUAL_ID,
     ) -> None:
         """Initialize the language model and retrieval graph."""
         self._provider = provider
-        self._default_manual_id = default_manual_id
         self._prompt_cache: dict[str, str] = {}
         self._llm = AzureChatOpenAI(
             azure_endpoint=settings.azure_openai_endpoint,
@@ -52,12 +51,10 @@ class ChatService:
         @tool(response_format="content_and_artifact")
         def retrieve(query: str, config: RunnableConfig):
             """Retrieve information related to a query."""
-            manual_id = config["configurable"].get("manual_id", self._default_manual_id)
+            manual_id = config["configurable"]["manual_id"]
             vector_store = self._provider.get_store(manual_id)
             retrieved_docs = vector_store.similarity_search(query, k=5)
-            serialized = "\n\n".join(
-                f"Document: {doc.page_content}" for doc in retrieved_docs
-            )
+            serialized = "\n\n".join(f"Document: {doc.page_content}" for doc in retrieved_docs)
             return serialized, retrieved_docs
 
         def query_or_respond(state: ChatState):
@@ -106,21 +103,16 @@ class ChatService:
 
         return graph_builder.compile(checkpointer=MemorySaver())
 
-    def ask(
-        self,
-        question: str,
-        thread_id: str,
-        manual_id: str | None = None,
-    ) -> str:
+    def ask(self, request: AskRequest) -> AskResponse:
         """Ask the chatbot a question and return the final assistant reply."""
-        manual_id = manual_id or self._default_manual_id
+        manual_id = request.manual_id
         system_prompt = self._get_prompt(manual_id)
-        config = {"configurable": {"thread_id": thread_id, "manual_id": manual_id}}
+        config = {"configurable": {"thread_id": request.thread_id, "manual_id": manual_id}}
         response = self._graph.invoke(
             {
-                "messages": [{"role": "user", "content": question}],
+                "messages": [{"role": "user", "content": request.question}],
                 "system_prompt": system_prompt,
             },
             config=config,
         )
-        return response["messages"][-1].content
+        return AskResponse(answer=response["messages"][-1].content)

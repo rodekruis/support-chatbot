@@ -2,15 +2,13 @@
 
 from pydantic import BaseModel, Field
 
-from support_chatbot.config.manuals import DEFAULT_MANUAL_ID
-
 
 class QuestionRequest(BaseModel):
     """Request body for asking a question about a manual."""
 
     question: str = Field(min_length=1, description="Text of the user question.")
     manual_id: str = Field(
-        default=DEFAULT_MANUAL_ID,
+        min_length=1,
         description="Id of the manual to answer from.",
     )
 
@@ -21,8 +19,8 @@ class QuestionResponse(BaseModel):
     answer: str
 
 
-class UpdateVectorStoreResponse(BaseModel):
-    """Response body for vector store refresh requests."""
+class IngestManualResponse(BaseModel):
+    """Response body for manual ingestion requests."""
 
     message: str
     documents_indexed: int

@@ -3,7 +3,7 @@
 
 def test_ask_requires_read_key(client):
     """Reject chat requests without the read API key."""
-    response = client.post("/ask", json={"question": "hello"})
+    response = client.post("/ask", json={"question": "hello", "manual_id": "121"})
     assert response.status_code == 401
 
 
@@ -12,7 +12,7 @@ def test_ask_returns_answer_with_read_key(client):
     response = client.post(
         "/ask",
         headers={"Authorization": "read-key"},
-        json={"question": "hello"},
+        json={"question": "hello", "manual_id": "121"},
     )
     assert response.status_code == 200
     assert response.json()["answer"].startswith("echo:hello")
@@ -29,18 +29,22 @@ def test_ask_passes_manual_id(client):
     assert response.json()["answer"].endswith(":121")
 
 
-def test_update_vector_store_requires_write_key(client):
-    """Reject vector store updates without the write API key."""
+def test_ingest_manual_requires_write_key(client):
+    """Reject manual ingestion without the write API key."""
     response = client.post(
-        "/update-vector-store", headers={"Authorization": "read-key"}
+        "/ingest-manual",
+        headers={"Authorization": "read-key"},
+        params={"manual_id": "121"},
     )
     assert response.status_code == 401
 
 
-def test_update_vector_store_with_write_key(client):
+def test_ingest_manual_with_write_key(client):
     """Return the indexing summary when the write API key is present."""
     response = client.post(
-        "/update-vector-store", headers={"Authorization": "write-key"}
+        "/ingest-manual",
+        headers={"Authorization": "write-key"},
+        params={"manual_id": "121"},
     )
     assert response.status_code == 200
     payload = response.json()
@@ -48,10 +52,10 @@ def test_update_vector_store_with_write_key(client):
     assert payload["index_name"] == "support-chatbot-index-121"
 
 
-def test_update_vector_store_with_manual_id(client):
-    """Forward the manual id to the vector store refresh endpoint."""
+def test_ingest_manual_with_manual_id(client):
+    """Forward the manual id to the manual ingestion endpoint."""
     response = client.post(
-        "/update-vector-store",
+        "/ingest-manual",
         headers={"Authorization": "write-key"},
         params={"manual_id": "demo"},
     )

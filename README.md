@@ -46,15 +46,15 @@ Markdown file under [`prompts/`](./src/support_chatbot/prompts/), then index it
 
 Each manual is stored in its own search index named
 `{VECTOR_STORE_ID}-{manual_id}` (e.g. `support-chatbot-index-121`). Both `/ask`
-and `/update-vector-store` accept an optional `manual_id` (defaults to `121`):
+and `/ingest-manual` require a `manual_id`:
 
 - `POST /ask` — body `{"question": "...", "manual_id": "121"}`. Selects the
   manual's prompt and searches its index.
-- `POST /update-vector-store?manual_id=121` — scrapes the manual and rebuilds
+- `POST /ingest-manual?manual_id=121` — scrapes the manual and rebuilds
   its index.
 
 > **Migration:** index naming changed from `{VECTOR_STORE_ID}` to
-> `{VECTOR_STORE_ID}-{manual_id}`. Run `POST /update-vector-store?manual_id=121`
+> `{VECTOR_STORE_ID}-{manual_id}`. Run `POST /ingest-manual?manual_id=121`
 > once to populate the new index; the old index can then be deleted.
 
 ### Run locally
