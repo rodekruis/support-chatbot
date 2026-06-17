@@ -1,4 +1,4 @@
-"""Docling-based document loader and splitter adapter."""
+"""Kreuzberg-based document loader and splitter adapter."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from urllib.parse import urldefrag, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from langchain_docling.loader import DoclingLoader
+from kreuzberg import ExtractionConfig, extract_bytes_sync
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from support_chatbot.domain.models import Document, ManualConfig
@@ -30,7 +30,11 @@ def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
 
     line_doc_counts: dict[str, int] = {}
     for doc in docs:
-        seen = {stripped for line in doc.page_content.splitlines() if (stripped := line.strip())}
+        seen = {
+            stripped
+            for line in doc.page_content.splitlines()
+            if (stripped := line.strip())
+        }
         for line in seen:
             line_doc_counts[line] = line_doc_counts.get(line, 0) + 1
 
@@ -40,7 +44,11 @@ def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
         return docs
 
     for doc in docs:
-        kept = [line for line in doc.page_content.splitlines() if line.strip() not in boilerplate]
+        kept = [
+            line
+            for line in doc.page_content.splitlines()
+            if line.strip() not in boilerplate
+        ]
         doc.page_content = _collapse_blank_lines("\n".join(kept))
 
     return docs
@@ -75,7 +83,9 @@ def _normalize_url(url: str) -> str:
     return urldefrag(url).url
 
 
-def _is_allowed_manual_url(url: str, base_url: str, exclude_dirs: tuple[str, ...]) -> bool:
+def _is_allowed_manual_url(
+    url: str, base_url: str, exclude_dirs: tuple[str, ...]
+) -> bool:
     parsed = urlparse(url)
     base_parsed = urlparse(base_url)
     if parsed.scheme not in {"http", "https"}:
@@ -142,10 +152,9 @@ def _crawl_manual_urls(
 
 
 @dataclass
-class DoclingDocumentLoader(DocumentLoader):
-    """Crawl manuals with httpx/BeautifulSoup and convert pages via Docling."""
+class KreuzbergDocumentLoader(DocumentLoader):
+    """Crawl manuals with httpx/BeautifulSoup and convert pages via Kreuzberg."""
 
-    export_type: str = "markdown"
     max_pages: int = 500
 
     def load(self, config: ManualConfig) -> list[Document]:
@@ -156,17 +165,43 @@ class DoclingDocumentLoader(DocumentLoader):
             config.exclude_dirs,
             self.max_pages,
         )
-        docs = DoclingLoader(file_path=urls, export_type=self.export_type).load()
-        domain_docs = [
-            Document(page_content=doc.page_content, metadata=dict(doc.metadata or {}))
-            for doc in docs
-        ]
+        extraction_config = ExtractionConfig(output_format="markdown")
+        domain_docs: list[Document] = []
+        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+            for url in urls:
+                try:
+                    response = client.get(url)
+                    response.raise_for_status()
+                except Exception:
+                    continue
+
+                mime_type = (
+                    response.headers.get("content-type", "text/html")
+                    .split(";")[0]
+                    .strip()
+                    or "text/html"
+                )
+                try:
+                    result = extract_bytes_sync(
+                        response.content, mime_type, config=extraction_config
+                    )
+                except Exception:
+                    continue
+
+                domain_docs.append(
+                    Document(page_content=result.content, metadata={"source": url})
+                )
+
         domain_docs = strip_relative_paths(domain_docs)
         if config.strip_boilerplate:
-            domain_docs = strip_shared_boilerplate(domain_docs, config.boilerplate_threshold)
+            domain_docs = strip_shared_boilerplate(
+                domain_docs, config.boilerplate_threshold
+            )
         return domain_docs
 
-    def split(self, docs: list[Document], chunk_size: int, chunk_overlap: int) -> list[Document]:
+    def split(
+        self, docs: list[Document], chunk_size: int, chunk_overlap: int
+    ) -> list[Document]:
         """Split documents into overlapping chunks with start-index metadata."""
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -175,6 +210,8 @@ class DoclingDocumentLoader(DocumentLoader):
         )
         chunks = splitter.split_documents(docs)
         return [
-            Document(page_content=chunk.page_content, metadata=dict(chunk.metadata or {}))
+            Document(
+                page_content=chunk.page_content, metadata=dict(chunk.metadata or {})
+            )
             for chunk in chunks
         ]

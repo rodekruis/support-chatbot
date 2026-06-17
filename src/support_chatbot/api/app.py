@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from support_chatbot import __version__
-from support_chatbot.adapters.document_loader import DoclingDocumentLoader
+from support_chatbot.adapters.document_loader import KreuzbergDocumentLoader
 from support_chatbot.adapters.vector_store import AzureVectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
 from support_chatbot.api.middleware import RequestIdMiddleware, RequestLoggingMiddleware
@@ -57,7 +57,9 @@ def create_app(
 
         if chat_service_factory is None:
             if provider is None:
-                raise RuntimeError("Vector store provider is required for default chat service")
+                raise RuntimeError(
+                    "Vector store provider is required for default chat service"
+                )
             app.state.chat_service = ChatService(app_settings, provider)
         else:
             app.state.chat_service = chat_service_factory(app_settings)
@@ -68,7 +70,7 @@ def create_app(
                     "Vector store provider is required for default ingestion service"
                 )
             app.state.ingestion_service = ManualIngestionService(
-                app_settings, provider, DoclingDocumentLoader()
+                app_settings, provider, KreuzbergDocumentLoader()
             )
         else:
             app.state.ingestion_service = ingestion_service_factory(app_settings)
