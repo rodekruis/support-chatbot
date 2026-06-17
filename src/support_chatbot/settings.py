@@ -30,3 +30,13 @@ class AppSettings(BaseSettings):
     # the LLM-as-judge in the offline RAG quality tests. Kept distinct from
     # MODEL_CHAT so a model never grades its own output (self-preference bias).
     model_judge: str | None = Field(default=None, alias="MODEL_JUDGE")
+
+    # Optional, observability-only: self-hosted Langfuse for LLM tracing. When
+    # both keys are unset, tracing is disabled and the app behaves as before.
+    langfuse_host: str | None = Field(default=None, alias="LANGFUSE_BASE_URL")
+    langfuse_public_key: SecretStr | None = Field(
+        default=None, alias="LANGFUSE_PUBLIC_KEY"
+    )
+    langfuse_secret_key: SecretStr | None = Field(
+        default=None, alias="LANGFUSE_SECRET_KEY"
+    )

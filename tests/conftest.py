@@ -7,6 +7,7 @@ from support_chatbot.api.app import create_app
 from support_chatbot.domain.models import (
     AskRequest,
     AskResponse,
+    FeedbackRequest,
     IngestManualRequest,
     IngestManualResponse,
 )
@@ -16,11 +17,20 @@ from support_chatbot.settings import AppSettings
 class FakeChatService:
     """Minimal chat service double used by route tests."""
 
+    def __init__(self) -> None:
+        """Track the last feedback submitted for assertions."""
+        self.last_feedback: FeedbackRequest | None = None
+
     def ask(self, request: AskRequest) -> AskResponse:
         """Echo the request arguments in a predictable response."""
         return AskResponse(
-            answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}"
+            answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}",
+            trace_id="trace-123",
         )
+
+    def submit_feedback(self, request: FeedbackRequest) -> None:
+        """Record the feedback request for later assertions."""
+        self.last_feedback = request
 
 
 class FakeIngestionService:

@@ -54,6 +54,8 @@ def provider(eval_settings: AppSettings):
 @pytest.fixture(scope="session")
 def chat_service(eval_settings: AppSettings, provider):
     """Live chat service backed by Azure OpenAI + Azure AI Search."""
+    from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
     from support_chatbot.services.chat_service import ChatService
 
-    return ChatService(eval_settings, provider)
+    engine = LangGraphConversationEngine(eval_settings, provider)
+    return ChatService(engine)

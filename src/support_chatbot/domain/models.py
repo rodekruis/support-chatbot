@@ -43,6 +43,16 @@ class AskResponse:
     """Result of answering a chatbot question."""
 
     answer: str
+    trace_id: str | None = None
+
+
+@dataclass(frozen=True)
+class FeedbackRequest:
+    """User feedback (thumbs up/down) on a previously generated answer."""
+
+    trace_id: str
+    positive: bool
+    comment: str | None = None
 
 
 @dataclass(frozen=True)
