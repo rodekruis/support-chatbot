@@ -17,11 +17,11 @@ import uuid
 
 import pytest
 
+from support_chatbot.domain.models import AskRequest
 from tests.integration.golden_questions import (
     available_manual_ids,
     get_golden_questions,
 )
-from support_chatbot.domain.models import AskRequest
 
 pytestmark = pytest.mark.integration
 
