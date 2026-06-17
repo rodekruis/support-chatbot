@@ -50,7 +50,9 @@ class AzureVectorStore(VectorStore):
         fields = [
             SimpleField(name="id", type=SearchFieldDataType.String, key=True),
             SearchableField(name="content", type=SearchFieldDataType.String),
-            SimpleField(name="source", type=SearchFieldDataType.String, filterable=True),
+            SimpleField(
+                name="source", type=SearchFieldDataType.String, filterable=True
+            ),
             SimpleField(name="metadata_json", type=SearchFieldDataType.String),
             SearchField(
                 name="content_vector",
@@ -129,7 +131,9 @@ class AzureVectorStore(VectorStore):
             source = result.get("source")
             if source and "source" not in metadata:
                 metadata["source"] = source
-            docs.append(Document(page_content=result.get("content", ""), metadata=metadata))
+            docs.append(
+                Document(page_content=result.get("content", ""), metadata=metadata)
+            )
         return docs
 
 
@@ -152,12 +156,23 @@ class AzureVectorStoreProvider(VectorStoreProvider):
             deployment=settings.model_embeddings,
             chunk_size=1,
         )
-        self._embedding_dimensions = len(self._embeddings.embed_query("healthcheck"))
+        # Resolved lazily on first store creation so application startup does
+        # not depend on a live Azure OpenAI call (a failure here would otherwise
+        # crash container startup before the health endpoint is reachable).
+        self._embedding_dimensions: int | None = None
         self._index_client = SearchIndexClient(
             settings.vector_store_address,
             AzureKeyCredential(settings.vector_store_password.get_secret_value()),
         )
         self._stores: dict[str, AzureVectorStore] = {}
+
+    def _get_embedding_dimensions(self) -> int:
+        """Return the embedding vector size, probing Azure OpenAI once on demand."""
+        if self._embedding_dimensions is None:
+            self._embedding_dimensions = len(
+                self._embeddings.embed_query("healthcheck")
+            )
+        return self._embedding_dimensions
 
     def index_name(self, manual_id: str) -> str:
         """Return the Azure Search index name for a manual."""
@@ -175,6 +190,6 @@ class AzureVectorStoreProvider(VectorStoreProvider):
                 api_key=self._settings.vector_store_password.get_secret_value(),
                 index_name=self.index_name(manual_id),
                 embeddings=self._embeddings,
-                vector_dimensions=self._embedding_dimensions,
+                vector_dimensions=self._get_embedding_dimensions(),
             )
         return self._stores[manual_id]
