@@ -57,9 +57,7 @@ def create_app(
 
         if chat_service_factory is None:
             if provider is None:
-                raise RuntimeError(
-                    "Vector store provider is required for default chat service"
-                )
+                raise RuntimeError("Vector store provider is required for default chat service")
             app.state.chat_service = ChatService(app_settings, provider)
         else:
             app.state.chat_service = chat_service_factory(app_settings)

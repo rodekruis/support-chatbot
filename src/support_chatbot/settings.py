@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class AppSettings(BaseSettings):
     """Typed application configuration used by the service layer."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
     port: int = Field(default=8000, alias="PORT")
 
@@ -24,3 +26,7 @@ class AppSettings(BaseSettings):
 
     model_chat: str = Field(alias="MODEL_CHAT")
     model_embeddings: str = Field(alias="MODEL_EMBEDDINGS")
+    # Optional, evaluation-only: a separate (ideally stronger) deployment used as
+    # the LLM-as-judge in the offline RAG quality tests. Kept distinct from
+    # MODEL_CHAT so a model never grades its own output (self-preference bias).
+    model_judge: str | None = Field(default=None, alias="MODEL_JUDGE")

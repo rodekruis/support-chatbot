@@ -30,11 +30,7 @@ def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
 
     line_doc_counts: dict[str, int] = {}
     for doc in docs:
-        seen = {
-            stripped
-            for line in doc.page_content.splitlines()
-            if (stripped := line.strip())
-        }
+        seen = {stripped for line in doc.page_content.splitlines() if (stripped := line.strip())}
         for line in seen:
             line_doc_counts[line] = line_doc_counts.get(line, 0) + 1
 
@@ -44,11 +40,7 @@ def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
         return docs
 
     for doc in docs:
-        kept = [
-            line
-            for line in doc.page_content.splitlines()
-            if line.strip() not in boilerplate
-        ]
+        kept = [line for line in doc.page_content.splitlines() if line.strip() not in boilerplate]
         doc.page_content = _collapse_blank_lines("\n".join(kept))
 
     return docs
@@ -83,9 +75,7 @@ def _normalize_url(url: str) -> str:
     return urldefrag(url).url
 
 
-def _is_allowed_manual_url(
-    url: str, base_url: str, exclude_dirs: tuple[str, ...]
-) -> bool:
+def _is_allowed_manual_url(url: str, base_url: str, exclude_dirs: tuple[str, ...]) -> bool:
     parsed = urlparse(url)
     base_parsed = urlparse(base_url)
     if parsed.scheme not in {"http", "https"}:
@@ -173,14 +163,10 @@ class DoclingDocumentLoader(DocumentLoader):
         ]
         domain_docs = strip_relative_paths(domain_docs)
         if config.strip_boilerplate:
-            domain_docs = strip_shared_boilerplate(
-                domain_docs, config.boilerplate_threshold
-            )
+            domain_docs = strip_shared_boilerplate(domain_docs, config.boilerplate_threshold)
         return domain_docs
 
-    def split(
-        self, docs: list[Document], chunk_size: int, chunk_overlap: int
-    ) -> list[Document]:
+    def split(self, docs: list[Document], chunk_size: int, chunk_overlap: int) -> list[Document]:
         """Split documents into overlapping chunks with start-index metadata."""
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -189,8 +175,6 @@ class DoclingDocumentLoader(DocumentLoader):
         )
         chunks = splitter.split_documents(docs)
         return [
-            Document(
-                page_content=chunk.page_content, metadata=dict(chunk.metadata or {})
-            )
+            Document(page_content=chunk.page_content, metadata=dict(chunk.metadata or {}))
             for chunk in chunks
         ]

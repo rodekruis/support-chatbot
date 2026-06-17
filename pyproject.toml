@@ -40,6 +40,7 @@ dev = [
   "ruff>=0.6.0",
   "ty",
   "import-linter>=2.0",
+  "deepeval>=4.0",
 ]
 
 [project.urls]
@@ -59,6 +60,11 @@ include = ["support_chatbot*"]
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: slow tests that call live external services (Azure OpenAI, Azure AI Search)",
+]
 
 [tool.ruff]
 line-length = 100
