@@ -11,12 +11,20 @@ from support_chatbot.api.dependencies import (
     require_write_key,
 )
 from support_chatbot.api.schemas import (
+    FeedbackRequest,
+    FeedbackResponse,
     IngestManualResponse,
     ModelsResponse,
     QuestionRequest,
     QuestionResponse,
 )
-from support_chatbot.domain.models import AskRequest, IngestManualRequest
+from support_chatbot.domain.models import (
+    AskRequest,
+    IngestManualRequest,
+)
+from support_chatbot.domain.models import (
+    FeedbackRequest as FeedbackCommand,
+)
 from support_chatbot.settings import AppSettings
 
 router = APIRouter()
@@ -44,7 +52,29 @@ async def ask_question(
             manual_id=payload.manual_id,
         )
     )
-    return QuestionResponse(answer=result.answer)
+    return QuestionResponse(answer=result.answer, trace_id=result.trace_id)
+
+
+@router.post(
+    "/feedback",
+    response_model=FeedbackResponse,
+    status_code=202,
+    tags=["chat"],
+)
+async def submit_feedback(
+    payload: FeedbackRequest,
+    _: None = Depends(require_read_key),
+    chat_service=Depends(get_chat_service),
+) -> FeedbackResponse:
+    """Attach a thumbs up/down score to a previously generated answer."""
+    chat_service.submit_feedback(
+        FeedbackCommand(
+            trace_id=payload.trace_id,
+            positive=payload.positive,
+            comment=payload.comment,
+        )
+    )
+    return FeedbackResponse(message="Feedback accepted.")
 
 
 @router.post(
@@ -69,7 +99,9 @@ async def ingest_manual(
 @router.get("/get-models", response_model=ModelsResponse, tags=["system"])
 async def get_models(settings: AppSettings = Depends(get_settings)) -> ModelsResponse:
     """Return the configured chat and embedding model names."""
-    return ModelsResponse(chatbot=settings.model_chat, embeddings=settings.model_embeddings)
+    return ModelsResponse(
+        chatbot=settings.model_chat, embeddings=settings.model_embeddings
+    )
 
 
 @router.get("/health", tags=["system"])

@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from support_chatbot import __version__
+from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
 from support_chatbot.adapters.document_loader import KreuzbergDocumentLoader
 from support_chatbot.adapters.vector_store import AzureVectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
@@ -55,12 +56,14 @@ def create_app(
         if chat_service_factory is None or ingestion_service_factory is None:
             provider = AzureVectorStoreProvider(app_settings)
 
+        engine = None
         if chat_service_factory is None:
             if provider is None:
                 raise RuntimeError(
                     "Vector store provider is required for default chat service"
                 )
-            app.state.chat_service = ChatService(app_settings, provider)
+            engine = LangGraphConversationEngine(app_settings, provider)
+            app.state.chat_service = ChatService(engine)
         else:
             app.state.chat_service = chat_service_factory(app_settings)
 
@@ -76,6 +79,9 @@ def create_app(
             app.state.ingestion_service = ingestion_service_factory(app_settings)
 
         yield
+
+        if engine is not None:
+            engine.flush()
 
     app = FastAPI(
         title="support-chatbot",

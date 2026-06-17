@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from support_chatbot.domain.models import Document, ManualConfig
+from support_chatbot.domain.models import AskResponse, Document, ManualConfig
 
 
 @runtime_checkable
@@ -20,7 +20,9 @@ class DocumentLoader(Protocol):
         """Crawl the manual described by ``config`` and return its pages."""
         ...
 
-    def split(self, docs: list[Document], chunk_size: int, chunk_overlap: int) -> list[Document]:
+    def split(
+        self, docs: list[Document], chunk_size: int, chunk_overlap: int
+    ) -> list[Document]:
         """Split documents into overlapping chunks of ``chunk_size``."""
         ...
 
@@ -52,4 +54,42 @@ class VectorStoreProvider(Protocol):
 
     def delete_index(self, manual_id: str) -> None:
         """Delete the backing index for a manual."""
+        ...
+
+
+@runtime_checkable
+class ConversationEngine(Protocol):
+    """Generates an answer for a question using retrieval and a language model.
+
+    This isolates the services layer from the concrete LLM / orchestration
+    framework (LangChain, LangGraph), which lives entirely in an adapter.
+    """
+
+    def answer(
+        self,
+        *,
+        question: str,
+        thread_id: str,
+        manual_id: str,
+        system_prompt: str,
+    ) -> AskResponse:
+        """Return the assistant's reply (with an optional trace id) for a question."""
+        ...
+
+    def score(
+        self,
+        *,
+        trace_id: str,
+        value: float,
+        comment: str | None = None,
+    ) -> None:
+        """Attach a user-feedback score to a previously generated answer.
+
+        Silently ignored by implementations that have no tracing backend
+        configured to record the score against.
+        """
+        ...
+
+    def flush(self) -> None:
+        """Flush any pending telemetry before shutdown (no-op if unused)."""
         ...

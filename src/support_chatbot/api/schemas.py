@@ -17,6 +17,32 @@ class QuestionResponse(BaseModel):
     """Response body containing the chatbot answer."""
 
     answer: str
+    trace_id: str | None = Field(
+        default=None,
+        description="Observability trace id; pass it back to /feedback to score the answer.",
+    )
+
+
+class FeedbackRequest(BaseModel):
+    """Request body for submitting thumbs up/down feedback on an answer."""
+
+    trace_id: str = Field(
+        min_length=1,
+        description="Trace id returned by /ask for the answer being rated.",
+    )
+    positive: bool = Field(
+        description="True for thumbs up, False for thumbs down.",
+    )
+    comment: str | None = Field(
+        default=None,
+        description="Optional free-text feedback.",
+    )
+
+
+class FeedbackResponse(BaseModel):
+    """Response body confirming feedback was recorded."""
+
+    message: str
 
 
 class IngestManualResponse(BaseModel):
