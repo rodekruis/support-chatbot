@@ -1,47 +1,42 @@
-name: Deploy to dev
+name: build and deploy to dev
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  push:
     branches:
       - dev
   workflow_dispatch:
-    inputs:
-      image_sha:
-        description: "Image SHA to deploy (optional, defaults to triggering commit)"
-        required: false
-        type: string
-
-concurrency:
-  group: deploy-dev
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    if: |
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push') ||
-      github.event_name == 'workflow_dispatch'
+  quality:
     runs-on: ubuntu-latest
-    environment:
-      name: dev
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
-      - name: Resolve image tag
-        id: image
-        shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.image_sha }}" ]; then
-            echo "tag=${{ github.event.inputs.image_sha }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          fi
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run -- python -m pytest tests -v
+
+  build-and-push-image:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to registry
         uses: docker/login-action@v3
@@ -50,30 +45,29 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Wait for image tag in registry
-        shell: bash
-        run: |
-          IMAGE="${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}"
-          echo "Waiting for image: $IMAGE"
+      - name: Build and push container image to container registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          for i in {1..30}; do
-            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
-              echo "Image is available."
-              exit 0
-            fi
-
-            echo "Image not available yet (attempt $i/30), waiting 20s..."
-            sleep 20
-          done
-
-          echo "::error::Image $IMAGE was not found after waiting."
-          exit 1
-
+  deploy:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    environment:
+      name: 'dev'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    steps:
       - name: Deploy container image to Azure Web App (dev)
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
-          slot-name: production
+          app-name: 'support-chatbot'
+          slot-name: 'dev'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}
+          images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
