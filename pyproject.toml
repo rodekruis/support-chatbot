@@ -12,7 +12,6 @@ dependencies = [
   "azure-search-documents",
   "azure-identity",
   "beautifulsoup4",
-  "chromadb",
   "fastapi",
   "gunicorn",
   "httpx",
@@ -21,14 +20,9 @@ dependencies = [
   "langchain-openai",
   "langchain-text-splitters",
   "langgraph",
-  "lxml",
-  "markdownify",
-  "pandas",
   "pyyaml>=6.0",
   "pydantic-settings",
   "python-dotenv",
-  "spacy",
-  "streamlit",
   "uvicorn",
   "urllib3>=2.6.0",
 ]
@@ -41,6 +35,7 @@ dev = [
   "ty",
   "import-linter>=2.0",
   "deepeval>=4.0",
+  "streamlit",
 ]
 
 [project.urls]

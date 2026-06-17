@@ -8,7 +8,7 @@ environment is configured (see ``tests/integration/conftest.py``).
 
 Run explicitly with::
 
-    uv run pytest -m integration
+    uv run -- python -m pytest -m integration
 """
 
 from __future__ import annotations

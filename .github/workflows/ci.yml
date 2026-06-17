@@ -34,7 +34,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Run tests
-        run: uv run pytest tests -v
+        run: uv run -- python -m pytest tests -v
 
   build-and-push-image:
     if: github.event_name == 'push'

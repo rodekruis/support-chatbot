@@ -1,22 +1,24 @@
 # python base image in the container from Docker Hub
 FROM python:3.12-slim
 
-# copy files to the /app folder in the container
-COPY ./src /app/src
-COPY ./main.py /app/main.py
-COPY ./pyproject.toml /app/pyproject.toml
-COPY ./uv.lock /app/uv.lock
-
 # install uv from official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # set the working directory in the container to be /app
 WORKDIR /app
 
-# install required packages in a local virtual environment
-RUN uv sync --frozen
+# install dependencies first using only the lockfile so this layer is cached
+# across code-only changes; a cache mount avoids re-downloading wheels
+COPY ./pyproject.toml ./uv.lock /app/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
+
+# copy the application source and install the project itself
+COPY ./src /app/src
+COPY ./main.py /app/main.py
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 ENV PATH="/app/.venv/bin:$PATH"
-RUN python -m spacy download en_core_web_sm
 
 # expose the port that uvicorn will run the app on
 ENV PORT=8000

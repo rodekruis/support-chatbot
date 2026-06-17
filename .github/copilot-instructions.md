@@ -37,7 +37,7 @@ Follow these principles: you assist, the human decides, reviews, and owns the ou
 uv sync                 # install (incl. dev)
 uv add fastapi          # add runtime dep
 uv add --dev pytest     # add dev dep
-uv run pytest           # test
+uv run -- python -m pytest           # test
 uv run ruff check .     # lint
 uv run ty check         # type check
 ```
@@ -137,8 +137,8 @@ def create_app() -> FastAPI:
   `dependency_overrides`. Patch externals where they are *used*.
 
 ```python
-uv run pytest --cov=src --cov-report=term-missing
-uv run pytest -m "not integration"
+uv run -- python -m pytest --cov=src --cov-report=term-missing
+uv run -- python -m pytest -m "not integration"
 ```
 
 ## Logging & Observability
