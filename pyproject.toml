@@ -3,6 +3,7 @@ name = "support-chatbot"
 version = "0.0.1"
 description = "Level 1 support chatbot for 510 products and services"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12,<4.0"
 authors = [
   { name = "Jacopo Margutti", email = "jmargutti@redcross.nl" }
@@ -11,21 +12,17 @@ dependencies = [
   "azure-search-documents",
   "azure-identity",
   "beautifulsoup4",
-  "chromadb",
   "fastapi",
   "gunicorn",
   "httpx",
+  "kreuzberg>=4.9",
   "langchain",
-  "langchain-community>=0.3.27",
   "langchain-openai",
+  "langchain-text-splitters",
   "langgraph",
-  "lxml",
-  "markdownify",
-  "pandas",
+  "pyyaml>=6.0",
   "pydantic-settings",
   "python-dotenv",
-  "spacy",
-  "streamlit",
   "uvicorn",
   "urllib3>=2.6.0",
 ]
@@ -35,6 +32,10 @@ dev = [
   "pytest>=8.3.0",
   "pytest-cov>=5.0.0",
   "ruff>=0.6.0",
+  "ty",
+  "import-linter>=2.0",
+  "deepeval>=4.0",
+  "streamlit",
 ]
 
 [project.urls]
@@ -47,6 +48,72 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["support_chatbot*"]
 
+[tool.setuptools.package-data]
+"support_chatbot" = ["prompts/*.md"]
+"support_chatbot.config" = ["*.yaml"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: slow tests that call live external services (Azure OpenAI, Azure AI Search)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "T20", "N", "RET", "PTH"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dependency-injection markers are evaluated once at import time and are
+# the idiomatic way to declare defaults, so they are safe to call in defaults.
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Body",
+  "fastapi.Header",
+]
+
+[tool.importlinter]
+root_package = "support_chatbot"
+
+[[tool.importlinter.contracts]]
+name = "Hexagonal layers (api -> services -> domain)"
+type = "layers"
+layers = [
+  "support_chatbot.api",
+  "support_chatbot.services",
+  "support_chatbot.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain imports nothing else in the project"
+type = "forbidden"
+source_modules = ["support_chatbot.domain"]
+forbidden_modules = [
+  "support_chatbot.api",
+  "support_chatbot.services",
+  "support_chatbot.adapters",
+  "support_chatbot.config",
+  "support_chatbot.settings",
+]
+
+[[tool.importlinter.contracts]]
+name = "Services depend on ports, not concrete adapters"
+type = "forbidden"
+source_modules = ["support_chatbot.services"]
+forbidden_modules = ["support_chatbot.adapters"]
+
+[[tool.importlinter.contracts]]
+name = "Adapters do not depend on services or api"
+type = "forbidden"
+source_modules = ["support_chatbot.adapters"]
+forbidden_modules = [
+  "support_chatbot.services",
+  "support_chatbot.api",
+]

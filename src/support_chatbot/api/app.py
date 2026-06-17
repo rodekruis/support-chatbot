@@ -1,23 +1,26 @@
+"""Application factory and FastAPI configuration."""
+
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from support_chatbot import __version__
-from support_chatbot.adapters.vector_store import build_vector_store_bundle
+from support_chatbot.adapters.document_loader import KreuzbergDocumentLoader
+from support_chatbot.adapters.vector_store import AzureVectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
 from support_chatbot.api.middleware import RequestIdMiddleware, RequestLoggingMiddleware
 from support_chatbot.api.routes import router
 from support_chatbot.services.chat_service import ChatService
-from support_chatbot.services.vector_store_service import VectorStoreService
+from support_chatbot.services.manual_ingestion_service import ManualIngestionService
 from support_chatbot.settings import AppSettings
 
 DESCRIPTION = """
-Chat with [121 user manual](https://manual.121.global/) and get answers from support-chatbot.
+Offers level-1 support for products and services.
 
 Built by [NLRC 510](https://www.510.global/).
 """
@@ -38,8 +41,9 @@ def create_app(
     *,
     settings: AppSettings | None = None,
     chat_service_factory=None,
-    vector_store_service_factory=None,
+    ingestion_service_factory=None,
 ) -> FastAPI:
+    """Build and configure the FastAPI application."""
     app_settings = settings or AppSettings()
 
     @asynccontextmanager
@@ -47,33 +51,29 @@ def create_app(
         _setup_logging()
         app.state.settings = app_settings
 
-        vector_bundle = None
-        if chat_service_factory is None or vector_store_service_factory is None:
-            vector_bundle = build_vector_store_bundle(app_settings)
+        provider = None
+        if chat_service_factory is None or ingestion_service_factory is None:
+            provider = AzureVectorStoreProvider(app_settings)
 
         if chat_service_factory is None:
-            if vector_bundle is None:
+            if provider is None:
                 raise RuntimeError(
-                    "Vector store bundle is required for default chat service"
+                    "Vector store provider is required for default chat service"
                 )
-            app.state.chat_service = ChatService(
-                app_settings, vector_bundle.vector_store
-            )
+            app.state.chat_service = ChatService(app_settings, provider)
         else:
             app.state.chat_service = chat_service_factory(app_settings)
 
-        if vector_store_service_factory is None:
-            if vector_bundle is None:
+        if ingestion_service_factory is None:
+            if provider is None:
                 raise RuntimeError(
-                    "Vector store bundle is required for default vector store service"
+                    "Vector store provider is required for default ingestion service"
                 )
-            app.state.vector_store_service = VectorStoreService(
-                app_settings,
-                vector_bundle.vector_store,
-                vector_bundle.index_client,
+            app.state.ingestion_service = ManualIngestionService(
+                app_settings, provider, KreuzbergDocumentLoader()
             )
         else:
-            app.state.vector_store_service = vector_store_service_factory(app_settings)
+            app.state.ingestion_service = ingestion_service_factory(app_settings)
 
         yield
 
@@ -83,8 +83,8 @@ def create_app(
         version=__version__,
         lifespan=lifespan,
         license_info={
-            "name": "AGPL-3.0 license",
-            "url": "https://www.gnu.org/licenses/agpl-3.0.en.html",
+            "name": "Apache-2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0",
         },
     )
 

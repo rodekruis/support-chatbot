@@ -1,21 +1,38 @@
+"""Chat orchestration service for manual question answering."""
+
 from __future__ import annotations
 
-from pathlib import Path
-
 from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_openai import AzureChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
+from support_chatbot.config.manuals import get_manual_prompt
+from support_chatbot.domain.models import AskRequest, AskResponse
+from support_chatbot.domain.ports import VectorStoreProvider
 from support_chatbot.settings import AppSettings
 
 
+class ChatState(MessagesState):
+    """State stored in the LangGraph conversation graph."""
+
+    system_prompt: str
+
+
 class ChatService:
-    def __init__(self, settings: AppSettings, vector_store) -> None:
-        self._vector_store = vector_store
-        self._prompt = self._load_prompt()
+    """Coordinate prompt loading, retrieval, and answer generation."""
+
+    def __init__(
+        self,
+        settings: AppSettings,
+        provider: VectorStoreProvider,
+    ) -> None:
+        """Initialize the language model and retrieval graph."""
+        self._provider = provider
+        self._prompt_cache: dict[str, str] = {}
         self._llm = AzureChatOpenAI(
             azure_endpoint=settings.azure_openai_endpoint,
             azure_deployment=settings.model_chat,
@@ -25,31 +42,30 @@ class ChatService:
         )
         self._graph = self._build_graph()
 
-    def _load_prompt(self) -> str:
-        prompt_path = (
-            Path(__file__).resolve().parents[1] / "prompts" / "support_chatbot_prompt.txt"
-        )
-        return prompt_path.read_text(encoding="utf-8")
+    def _get_prompt(self, manual_id: str) -> str:
+        if manual_id not in self._prompt_cache:
+            self._prompt_cache[manual_id] = get_manual_prompt(manual_id)
+        return self._prompt_cache[manual_id]
 
     def _build_graph(self):
         @tool(response_format="content_and_artifact")
-        def retrieve(query: str):
+        def retrieve(query: str, config: RunnableConfig):
             """Retrieve information related to a query."""
-            retrieved_docs = self._vector_store.similarity_search(query, k=10)
-            serialized = "\n\n".join(
-                f"Document: {doc.page_content}" for doc in retrieved_docs
-            )
+            manual_id = config["configurable"]["manual_id"]
+            vector_store = self._provider.get_store(manual_id)
+            retrieved_docs = vector_store.similarity_search(query, k=5)
+            serialized = "\n\n".join(f"Document: {doc.page_content}" for doc in retrieved_docs)
             return serialized, retrieved_docs
 
-        def query_or_respond(state: MessagesState):
+        def query_or_respond(state: ChatState):
             llm_with_tools = self._llm.bind_tools([retrieve])
-            prompt = [SystemMessage(self._prompt)] + state["messages"]
+            prompt = [SystemMessage(state["system_prompt"])] + state["messages"]
             response = llm_with_tools.invoke(prompt)
             return {"messages": [response]}
 
         tools = ToolNode([retrieve])
 
-        def generate(state: MessagesState):
+        def generate(state: ChatState):
             recent_tool_messages = []
             for message in reversed(state["messages"]):
                 if message.type == "tool":
@@ -60,7 +76,7 @@ class ChatService:
             docs_content = "\n\n".join(
                 message.content for message in reversed(recent_tool_messages)
             )
-            system_message_content = f"{self._prompt}.\n\n{docs_content}"
+            system_message_content = f"{state['system_prompt']}.\n\n{docs_content}"
             conversation_messages = [
                 message
                 for message in state["messages"]
@@ -72,7 +88,7 @@ class ChatService:
             response = self._llm.invoke(prompt)
             return {"messages": [response]}
 
-        graph_builder = StateGraph(MessagesState)
+        graph_builder = StateGraph(ChatState)
         graph_builder.add_node(query_or_respond)
         graph_builder.add_node(tools)
         graph_builder.add_node(generate)
@@ -87,10 +103,16 @@ class ChatService:
 
         return graph_builder.compile(checkpointer=MemorySaver())
 
-    def ask(self, question: str, thread_id: str) -> str:
-        config = {"configurable": {"thread_id": thread_id}}
+    def ask(self, request: AskRequest) -> AskResponse:
+        """Ask the chatbot a question and return the final assistant reply."""
+        manual_id = request.manual_id
+        system_prompt = self._get_prompt(manual_id)
+        config = {"configurable": {"thread_id": request.thread_id, "manual_id": manual_id}}
         response = self._graph.invoke(
-            {"messages": [{"role": "user", "content": question}]},
+            {
+                "messages": [{"role": "user", "content": request.question}],
+                "system_prompt": system_prompt,
+            },
             config=config,
         )
-        return response["messages"][-1].content
+        return AskResponse(answer=response["messages"][-1].content)

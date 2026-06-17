@@ -1,8 +1,10 @@
+"""Request middleware for IDs and access logging."""
+
 from __future__ import annotations
 
+import logging
 import secrets
 import time
-import logging
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -10,12 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 class RequestIdMiddleware:
+    """Attach a request id to each HTTP request and response."""
+
     def __init__(self, app: ASGIApp):
+        """Store the downstream ASGI app."""
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        """Attach a request id to HTTP requests and responses."""
         if scope["type"] != "http":
-            return await self.app(scope, receive, send)
+            await self.app(scope, receive, send)
+            return
 
         request_id = f"req_{secrets.token_urlsafe(16)}"
         scope.setdefault("state", {})
@@ -32,12 +39,17 @@ class RequestIdMiddleware:
 
 
 class RequestLoggingMiddleware:
+    """Log request timing and status for each HTTP request."""
+
     def __init__(self, app: ASGIApp):
+        """Store the downstream ASGI app."""
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        """Log request timing and status after each HTTP call."""
         if scope["type"] != "http":
-            return await self.app(scope, receive, send)
+            await self.app(scope, receive, send)
+            return
 
         start = time.perf_counter()
         status_code = 500

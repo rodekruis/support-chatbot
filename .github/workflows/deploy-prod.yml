@@ -1,37 +1,16 @@
-name: Deploy Prod
+name: deploy to prod
 
 on:
   push:
     branches:
       - main
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
   workflow_dispatch:
-    inputs:
-      image_sha:
-        description: "Image SHA to deploy (optional, defaults to triggering commit)"
-        required: false
-        type: string
-
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: false
 
 jobs:
   deploy:
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push') ||
-      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
-      name: prod
+      name: 'prod'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
       - name: Resolve image tag
@@ -40,8 +19,6 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.image_sha }}" ]; then
             echo "tag=${{ github.event.inputs.image_sha }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
@@ -76,7 +53,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
-          slot-name: production
+          app-name: 'support-chatbot'
+          slot-name: 'prod'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}

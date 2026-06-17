@@ -1,21 +1,41 @@
+"""Shared pytest fixtures for support_chatbot tests."""
+
 import pytest
 from fastapi.testclient import TestClient
 
 from support_chatbot.api.app import create_app
+from support_chatbot.domain.models import (
+    AskRequest,
+    AskResponse,
+    IngestManualRequest,
+    IngestManualResponse,
+)
 from support_chatbot.settings import AppSettings
 
 
 class FakeChatService:
-    def ask(self, question: str, thread_id: str) -> str:
-        return f"echo:{question}:{thread_id}"
+    """Minimal chat service double used by route tests."""
+
+    def ask(self, request: AskRequest) -> AskResponse:
+        """Echo the request arguments in a predictable response."""
+        return AskResponse(
+            answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}"
+        )
 
 
-class FakeVectorStoreService:
-    def update_from_manual(self) -> int:
-        return 3
+class FakeIngestionService:
+    """Minimal manual ingestion service double used by route tests."""
+
+    def ingest(self, request: IngestManualRequest) -> IngestManualResponse:
+        """Return a predictable indexing summary for assertions."""
+        return IngestManualResponse(
+            documents_indexed=3,
+            index_name=f"support-chatbot-index-{request.manual_id}",
+        )
 
 
 def build_test_settings() -> AppSettings:
+    """Build the static settings object used by the test app."""
     return AppSettings.model_validate(
         {
             "PORT": 8000,
@@ -35,10 +55,11 @@ def build_test_settings() -> AppSettings:
 
 @pytest.fixture
 def client() -> TestClient:
+    """Return a TestClient wired with fake services."""
     app = create_app(
         settings=build_test_settings(),
         chat_service_factory=lambda _: FakeChatService(),
-        vector_store_service_factory=lambda _: FakeVectorStoreService(),
+        ingestion_service_factory=lambda _: FakeIngestionService(),
     )
     with TestClient(app) as test_client:
         yield test_client
