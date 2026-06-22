@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -22,6 +23,7 @@ from azure.search.documents.indexes.models import (
 from azure.search.documents.models import VectorizedQuery
 from langchain_openai import AzureOpenAIEmbeddings
 
+from support_chatbot.domain.errors import ExternalServiceError
 from support_chatbot.domain.models import Document
 from support_chatbot.domain.ports import VectorStore, VectorStoreProvider
 from support_chatbot.settings import AppSettings
@@ -75,7 +77,13 @@ class AzureVectorStore(VectorStore):
             fields=fields,
             vector_search=vector_search,
         )
-        self._index_client().create_or_update_index(index)
+        try:
+            self._index_client().create_or_update_index(index)
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to create or update search index {self.index_name!r}: "
+                f"{exc.message or exc}"
+            ) from exc
 
     def add_documents(self, docs: list[Document]) -> None:
         """Index a batch of documents in Azure AI Search."""
@@ -101,8 +109,14 @@ class AzureVectorStore(VectorStore):
 
         search_client = self._search_client()
         batch_size = 100
-        for i in range(0, len(payload), batch_size):
-            search_client.upload_documents(documents=payload[i : i + batch_size])
+        try:
+            for i in range(0, len(payload), batch_size):
+                search_client.upload_documents(documents=payload[i : i + batch_size])
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to index documents in {self.index_name!r}: "
+                f"{exc.message or exc}"
+            ) from exc
 
     def similarity_search(self, query: str, k: int = 10) -> list[Document]:
         """Return the nearest documents for a query string."""
@@ -120,20 +134,25 @@ class AzureVectorStore(VectorStore):
         )
 
         docs: list[Document] = []
-        for result in results:
-            metadata = {}
-            metadata_json = result.get("metadata_json")
-            if metadata_json:
-                try:
-                    metadata = json.loads(metadata_json)
-                except json.JSONDecodeError:
-                    metadata = {}
-            source = result.get("source")
-            if source and "source" not in metadata:
-                metadata["source"] = source
-            docs.append(
-                Document(page_content=result.get("content", ""), metadata=metadata)
-            )
+        try:
+            for result in results:
+                metadata = {}
+                metadata_json = result.get("metadata_json")
+                if metadata_json:
+                    try:
+                        metadata = json.loads(metadata_json)
+                    except json.JSONDecodeError:
+                        metadata = {}
+                source = result.get("source")
+                if source and "source" not in metadata:
+                    metadata["source"] = source
+                docs.append(
+                    Document(page_content=result.get("content", ""), metadata=metadata)
+                )
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to search index {self.index_name!r}: {exc.message or exc}"
+            ) from exc
         return docs
 
 
@@ -191,7 +210,13 @@ class AzureVectorStoreProvider(VectorStoreProvider):
 
     def delete_index(self, manual_id: str) -> None:
         """Delete the Azure Search index backing a manual."""
-        self._index_client.delete_index(self.index_name(manual_id))
+        index_name = self.index_name(manual_id)
+        try:
+            self._index_client.delete_index(index_name)
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to delete search index {index_name!r}: {exc.message or exc}"
+            ) from exc
 
     def get_store(self, manual_id: str) -> AzureVectorStore:
         """Return the cached vector store for a manual, creating it if needed."""
