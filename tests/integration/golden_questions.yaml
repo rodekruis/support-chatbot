@@ -3,3 +3,24 @@ manuals:
     - "How do I register new people in the 121 portal?"
     - "What is a payment in 121 and how is it made?"
     - "How can I create a new program?"
+    # Payments-cluster and exact-term questions: these exercise pages where pure
+    # vector search previously diluted the right result, so hybrid (BM25 +
+    # vector) retrieval should keep the correct page ranked first.
+    - "How do I reconcile manual payments?"
+    - "How do I approve a payment?"
+    - "How do I set up Twilio to send messages?"
+    - "How do I export a payment report?"
+    - "How do I reset my password?"
+    - "How do I format the reconciliation CSV file?"
+    # Role/permission questions phrased as "why can't I...": these depend on the
+    # role-based permissions table parsing correctly, so they guard against the
+    # icon/table extraction regressions handled in the document loader.
+    - "Why can't I make payments with a CVA Officer role?"
+    - "Why can't a Finance Officer update a registrant's personal information?"
+    - "Which roles are allowed to reconcile manual payments?"
+    - "I have a View-only role; why can't I import registrations?"
+    # CSV/Excel questions: confirm the assistant can support spreadsheet-based
+    # tasks (import, mass data changes) including the known limitation that phone
+    # numbers cannot be bulk-updated.
+    - "How do I prepare an Excel file to import registrations into 121?"
+    - "Can I bulk update phone numbers using an import data changes CSV?"
