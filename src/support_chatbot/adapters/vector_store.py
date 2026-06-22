@@ -140,8 +140,10 @@ class AzureVectorStore(VectorStore):
 class AzureVectorStoreProvider(VectorStoreProvider):
     """Provides one Azure Search index per manual.
 
-    Each manual is stored in its own index named ``{vector_store_id}-{manual_id}``
-    so that retrieval for a given manual only searches that manual's content.
+    Each manual is stored in its own index named
+    ``support-chatbot-index-{manual_id}`` (with an ``-{environment}`` suffix in
+    non-prod environments) so that retrieval for a given manual only searches
+    that manual's content, and a non-prod deployment never overwrites prod data.
     Stores are created lazily and cached, while embeddings and the index client
     are shared across all manuals.
     """
@@ -175,8 +177,17 @@ class AzureVectorStoreProvider(VectorStoreProvider):
         return self._embedding_dimensions
 
     def index_name(self, manual_id: str) -> str:
-        """Return the Azure Search index name for a manual."""
-        return f"{self._settings.vector_store_id}-{manual_id}"
+        """Return the Azure Search index name for a manual.
+
+        Non-prod environments get an ``-{environment}`` suffix so that ingesting
+        from e.g. a dev deployment never overwrites the prod index. ``prod`` keeps
+        the bare name for backward compatibility with existing indexes.
+        """
+        base = f"support-chatbot-index-{manual_id}"
+        environment = self._settings.environment
+        if environment and environment != "prod":
+            return f"{base}-{environment}"
+        return base
 
     def delete_index(self, manual_id: str) -> None:
         """Delete the Azure Search index backing a manual."""

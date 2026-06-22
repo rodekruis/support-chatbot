@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import deque
 from dataclasses import dataclass
@@ -14,6 +15,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from support_chatbot.domain.models import Document, ManualConfig
 from support_chatbot.domain.ports import DocumentLoader
+
+logger = logging.getLogger(__name__)
 
 
 def strip_shared_boilerplate(docs: list, threshold: float = 0.9) -> list:
@@ -79,8 +82,76 @@ def strip_relative_paths(docs: list) -> list:
     return docs
 
 
+def _preprocess_html(html: str) -> str:
+    """Replace permission icon spans with text so their meaning survives conversion.
+
+    The manual encodes permission availability as inline ``<svg>`` icons inside
+    ``<span class="twemoji yes">`` (feature available) and
+    ``<span class="twemoji req">`` (available on request). The meaning lives only
+    in the CSS class, so every markdown converter drops it. Replacing the spans
+    with plain text before extraction preserves the permission matrix.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    for span in soup.select("span.twemoji.yes"):
+        span.replace_with("Yes")
+    for span in soup.select("span.twemoji.req"):
+        span.replace_with("On request")
+    return str(soup)
+
+
 def _normalize_url(url: str) -> str:
     return urldefrag(url).url
+
+
+def _split_table_row(row: str) -> list[str]:
+    """Split a markdown table row into its cells, dropping the outer pipes."""
+    return row.strip().strip("|").split("|")
+
+
+def _has_mostly_empty_table(
+    markdown: str, min_cells: int = 10, min_fill_ratio: float = 0.15
+) -> bool:
+    """Return True if any markdown table has almost no real text in its value cells.
+
+    Detects the failure mode where a whole column of meaningful content (such as
+    icon-encoded markers) is lost during conversion. Cells that contain only an
+    image (e.g. an inline ``![SVG Image](data:...)`` blob) or nothing are treated
+    as empty, since neither carries extractable text. Only tables with at least
+    ``min_cells`` value cells are checked, so small or legitimately sparse tables
+    are not flagged.
+    """
+    separator = re.compile(r"^:?-+:?$")
+    image = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+
+    def _cell_text(cell: str) -> str:
+        return image.sub("", cell).strip()
+
+    def _is_mostly_empty(block: list[str]) -> bool:
+        data_rows = [
+            row
+            for row in block
+            if not all(separator.match(c.strip()) for c in _split_table_row(row))
+        ]
+        # Drop the header row; keep value cells, excluding the first label column.
+        value_cells = [
+            _cell_text(c) for row in data_rows[1:] for c in _split_table_row(row)[1:]
+        ]
+        if len(value_cells) < min_cells:
+            return False
+        filled = sum(1 for c in value_cells if c)
+        return filled / len(value_cells) < min_fill_ratio
+
+    block: list[str] = []
+    for line in [*markdown.splitlines(), ""]:
+        stripped = line.strip()
+        if stripped.startswith("|"):
+            block.append(stripped)
+            continue
+        if block:
+            if _is_mostly_empty(block):
+                return True
+            block = []
+    return False
 
 
 def _is_allowed_manual_url(
@@ -181,11 +252,23 @@ class KreuzbergDocumentLoader(DocumentLoader):
                     .strip()
                     or "text/html"
                 )
+                if mime_type == "text/html":
+                    content = _preprocess_html(response.text).encode("utf-8")
+                else:
+                    content = response.content
                 try:
                     result = extract_bytes_sync(
-                        response.content, mime_type, config=extraction_config
+                        content, mime_type, config=extraction_config
                     )
                 except Exception:
+                    continue
+
+                if mime_type == "text/html" and _has_mostly_empty_table(result.content):
+                    logger.warning(
+                        "Skipping page with mostly-empty table, indicating dropped "
+                        "content (e.g. icon-encoded cells)",
+                        extra={"source": url},
+                    )
                     continue
 
                 domain_docs.append(

@@ -53,7 +53,6 @@ def build_test_settings() -> AppSettings:
             "AUTH_API_KEY_WRITE": "write-key",
             "VECTOR_STORE_ADDRESS": "https://example.search.windows.net",
             "VECTOR_STORE_PASSWORD": "dummy",
-            "VECTOR_STORE_ID": "support-chatbot-index",
             "AZURE_OPENAI_ENDPOINT": "https://example.openai.azure.com",
             "AZURE_OPENAI_API_KEY": "dummy",
             "AZURE_OPENAI_API_VERSION": "2024-06-01",
