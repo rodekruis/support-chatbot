@@ -131,7 +131,15 @@ class AzureVectorStore(VectorStore):
     def similarity_search_with_score(
         self, query: str, k: int = 10
     ) -> list[tuple[Document, float]]:
-        """Return the nearest documents paired with their Azure relevance score."""
+        """Return the nearest documents paired with their Azure relevance score.
+
+        Runs a hybrid query: Azure AI Search combines BM25 keyword search over
+        ``content`` with vector similarity over ``content_vector`` using
+        Reciprocal Rank Fusion. This recovers exact-term matches (feature names,
+        UI labels) that a pure vector search can miss. The returned score is the
+        fused RRF score, which is a relative ranking signal, not a calibrated
+        threshold.
+        """
         try:
             query_vector = self.embeddings.embed_query(query)
         except OpenAIError as exc:
@@ -144,7 +152,7 @@ class AzureVectorStore(VectorStore):
             fields="content_vector",
         )
         results = self._search_client().search(
-            search_text=None,
+            search_text=query,
             vector_queries=[vector_query],
             top=k,
             select=["content", "source", "metadata_json"],

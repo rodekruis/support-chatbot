@@ -99,6 +99,30 @@ def _preprocess_html(html: str) -> str:
     return str(soup)
 
 
+def _extract_title(html: str) -> str | None:
+    """Return a human-readable page title from HTML, if one can be found.
+
+    Prefers the first ``<h1>`` (the page-specific heading) and falls back to the
+    ``<title>`` element with any trailing site-name suffix (``Page - Site``)
+    removed. Returns ``None`` when no usable title is present.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    h1 = soup.find("h1")
+    if h1:
+        text = h1.get_text(strip=True).rstrip("\u00b6").strip()
+        if text:
+            return text
+    if soup.title and soup.title.string:
+        title = soup.title.string.strip()
+        for separator in (" - ", " | ", " \u2014 "):
+            if separator in title:
+                title = title.split(separator)[0].strip()
+                break
+        if title:
+            return title
+    return None
+
+
 def _normalize_url(url: str) -> str:
     return urldefrag(url).url
 
@@ -271,8 +295,13 @@ class KreuzbergDocumentLoader(DocumentLoader):
                     )
                     continue
 
+                metadata: dict[str, object] = {"source": url}
+                if mime_type == "text/html":
+                    title = _extract_title(response.text)
+                    if title:
+                        metadata["title"] = title
                 domain_docs.append(
-                    Document(page_content=result.content, metadata={"source": url})
+                    Document(page_content=result.content, metadata=metadata)
                 )
 
         domain_docs = strip_relative_paths(domain_docs)

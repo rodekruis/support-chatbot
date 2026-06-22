@@ -30,6 +30,11 @@ class AppSettings(BaseSettings):
 
     model_chat: str = Field(alias="MODEL_CHAT")
     model_embeddings: str = Field(alias="MODEL_EMBEDDINGS")
+
+    # Post-process answers with inline [n] citations mapping to the retrieved
+    # sources, via a separate LLM step reusing MODEL_CHAT. Enabled by default;
+    # any failure falls back to the plain, un-annotated answer.
+    citations_enabled: bool = Field(default=True, alias="CITATIONS_ENABLED")
     # Optional, evaluation-only: a separate (ideally stronger) deployment used as
     # the LLM-as-judge in the offline RAG quality tests. Kept distinct from
     # MODEL_CHAT so a model never grades its own output (self-preference bias).
