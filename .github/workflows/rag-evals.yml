@@ -1,0 +1,78 @@
+name: rag quality evals
+
+# Runs the golden-question RAG quality suite (LLM-as-judge) against the live dev
+# pipeline. These tests are slow, cost money and are non-deterministic, so they
+# are kept OFF the deploy gate and run on a nightly schedule (plus on demand).
+#
+# Required secrets/vars in the GitHub "dev" Environment (the eval skips silently
+# without them, so the "Verify configuration" step fails fast if any are unset):
+#   AUTH_API_KEY, AUTH_API_KEY_WRITE
+#   VECTOR_STORE_ADDRESS, VECTOR_STORE_PASSWORD
+#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_API_VERSION
+#   MODEL_CHAT, MODEL_EMBEDDINGS, MODEL_JUDGE
+
+on:
+  schedule:
+    # 03:00 UTC nightly.
+    - cron: "0 3 * * *"
+  # Run on PRs into main so a retrieval/answer regression is caught before merge
+  # (deploy-prod only promotes an already-built image, so gating there is too
+  # late). This is NOT blocking by default: it reports pass/fail as a check, but
+  # only becomes a hard gate if marked a required status check in branch
+  # protection. Keep it advisory until the LLM-as-judge scores prove stable,
+  # since they are non-deterministic and can wobble around the thresholds.
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  rag-evals:
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    env:
+      ENVIRONMENT: dev
+      AUTH_API_KEY: ${{ secrets.AUTH_API_KEY }}
+      AUTH_API_KEY_WRITE: ${{ secrets.AUTH_API_KEY_WRITE }}
+      VECTOR_STORE_ADDRESS: ${{ secrets.VECTOR_STORE_ADDRESS }}
+      VECTOR_STORE_PASSWORD: ${{ secrets.VECTOR_STORE_PASSWORD }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      MODEL_CHAT: ${{ secrets.MODEL_CHAT }}
+      MODEL_EMBEDDINGS: ${{ secrets.MODEL_EMBEDDINGS }}
+      MODEL_JUDGE: ${{ secrets.MODEL_JUDGE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Verify configuration
+        run: |
+          set -euo pipefail
+          missing=0
+          for var in AUTH_API_KEY AUTH_API_KEY_WRITE VECTOR_STORE_ADDRESS \
+                     VECTOR_STORE_PASSWORD AZURE_OPENAI_ENDPOINT AZURE_OPENAI_API_KEY \
+                     AZURE_OPENAI_API_VERSION MODEL_CHAT MODEL_EMBEDDINGS MODEL_JUDGE; do
+            if [ -z "${!var:-}" ]; then
+              echo "::error::Required secret '$var' is not set for the 'dev' environment."
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::RAG evals cannot run without the secrets above; failing instead of skipping silently."
+            exit 1
+          fi
+
+      - name: Run RAG quality evals
+        run: uv run -- python -m pytest tests/integration -m integration -v
