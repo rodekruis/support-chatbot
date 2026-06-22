@@ -15,7 +15,9 @@ from langchain_openai import AzureChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
+from openai import OpenAIError
 
+from support_chatbot.domain.errors import ExternalServiceError
 from support_chatbot.domain.models import AskResponse
 from support_chatbot.domain.ports import ConversationEngine, VectorStoreProvider
 from support_chatbot.settings import AppSettings
@@ -82,7 +84,10 @@ class LangGraphConversationEngine(ConversationEngine):
             response = llm_with_tools.invoke(prompt)
             return {"messages": [response]}
 
-        tools = ToolNode([retrieve])
+        # Disable LangGraph's default tool-error swallowing so retrieval failures
+        # (e.g. Azure Search / embeddings outages) propagate as ExternalServiceError
+        # and surface as a 502 instead of being fed back to the LLM as text.
+        tools = ToolNode([retrieve], handle_tool_errors=False)
 
         def generate(state: ChatState):
             recent_tool_messages = []
@@ -147,13 +152,18 @@ class LangGraphConversationEngine(ConversationEngine):
                 "langfuse_user_id": thread_id,
                 "langfuse_tags": [f"manual:{manual_id}"],
             }
-        response = self._graph.invoke(
-            {
-                "messages": [{"role": "user", "content": question}],
-                "system_prompt": system_prompt,
-            },
-            config=config,
-        )
+        try:
+            response = self._graph.invoke(
+                {
+                    "messages": [{"role": "user", "content": question}],
+                    "system_prompt": system_prompt,
+                },
+                config=config,
+            )
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Chat completion failed for manual {manual_id!r}: {exc}"
+            ) from exc
         return AskResponse(answer=response["messages"][-1].content, trace_id=trace_id)
 
     def score(

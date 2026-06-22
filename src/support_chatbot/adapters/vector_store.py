@@ -22,6 +22,7 @@ from azure.search.documents.indexes.models import (
 )
 from azure.search.documents.models import VectorizedQuery
 from langchain_openai import AzureOpenAIEmbeddings
+from openai import OpenAIError
 
 from support_chatbot.domain.errors import ExternalServiceError
 from support_chatbot.domain.models import Document
@@ -92,7 +93,12 @@ class AzureVectorStore(VectorStore):
 
         self._ensure_index()
         contents = [doc.page_content for doc in docs]
-        vectors = self.embeddings.embed_documents(contents)
+        try:
+            vectors = self.embeddings.embed_documents(contents)
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Failed to embed documents for {self.index_name!r}: {exc}"
+            ) from exc
 
         payload = []
         for doc, vector in zip(docs, vectors, strict=False):
@@ -120,7 +126,12 @@ class AzureVectorStore(VectorStore):
 
     def similarity_search(self, query: str, k: int = 10) -> list[Document]:
         """Return the nearest documents for a query string."""
-        query_vector = self.embeddings.embed_query(query)
+        try:
+            query_vector = self.embeddings.embed_query(query)
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Failed to embed query for {self.index_name!r}: {exc}"
+            ) from exc
         vector_query = VectorizedQuery(
             vector=query_vector,
             k_nearest_neighbors=k,
@@ -190,9 +201,15 @@ class AzureVectorStoreProvider(VectorStoreProvider):
     def _get_embedding_dimensions(self) -> int:
         """Return the embedding vector size, probing Azure OpenAI once on demand."""
         if self._embedding_dimensions is None:
-            self._embedding_dimensions = len(
-                self._embeddings.embed_query("healthcheck")
-            )
+            try:
+                self._embedding_dimensions = len(
+                    self._embeddings.embed_query("healthcheck")
+                )
+            except OpenAIError as exc:
+                raise ExternalServiceError(
+                    f"Failed to probe embedding model {self._settings.model_embeddings!r}: "
+                    f"{exc}"
+                ) from exc
         return self._embedding_dimensions
 
     def index_name(self, manual_id: str) -> str:
