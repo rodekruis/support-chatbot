@@ -19,6 +19,10 @@ manuals:
     - "Why can't a Finance Officer update a registrant's personal information?"
     - "Which roles are allowed to reconcile manual payments?"
     - "I have a View-only role; why can't I import registrations?"
+    # Zero-context permission question: the user states no role at all. The bot
+    # must still answer from the manual (explain required roles/permissions)
+    # instead of refusing with the "no documents" fallback.
+    - "Why can't I make payments?"
     # CSV/Excel questions: confirm the assistant can support spreadsheet-based
     # tasks (import, mass data changes) including the known limitation that phone
     # numbers cannot be bulk-updated.
