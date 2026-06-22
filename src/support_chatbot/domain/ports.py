@@ -39,6 +39,12 @@ class VectorStore(Protocol):
         """Return the ``k`` documents most similar to ``query``."""
         ...
 
+    def similarity_search_with_score(
+        self, query: str, k: int = 10
+    ) -> list[tuple[Document, float]]:
+        """Return the ``k`` most similar documents paired with their relevance score."""
+        ...
+
 
 @runtime_checkable
 class VectorStoreProvider(Protocol):

@@ -13,6 +13,18 @@ class QuestionRequest(BaseModel):
     )
 
 
+class Source(BaseModel):
+    """A manual page that backed an answer."""
+
+    url: str = Field(description="Link to the manual page.")
+    title: str | None = Field(
+        default=None, description="Human-readable page title, when available."
+    )
+    score: float | None = Field(
+        default=None, description="Relevance score reported by the vector store."
+    )
+
+
 class QuestionResponse(BaseModel):
     """Response body containing the chatbot answer."""
 
@@ -20,6 +32,10 @@ class QuestionResponse(BaseModel):
     trace_id: str | None = Field(
         default=None,
         description="Observability trace id; pass it back to /feedback to score the answer.",
+    )
+    sources: list[Source] = Field(
+        default_factory=list,
+        description="Manual pages that backed the answer, ordered by relevance.",
     )
 
 

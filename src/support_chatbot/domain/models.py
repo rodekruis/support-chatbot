@@ -39,11 +39,21 @@ class AskRequest:
 
 
 @dataclass(frozen=True)
+class Source:
+    """A manual page that backed an answer, with an optional relevance score."""
+
+    url: str
+    title: str | None = None
+    score: float | None = None
+
+
+@dataclass(frozen=True)
 class AskResponse:
     """Result of answering a chatbot question."""
 
     answer: str
     trace_id: str | None = None
+    sources: tuple[Source, ...] = ()
 
 
 @dataclass(frozen=True)

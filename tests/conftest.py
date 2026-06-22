@@ -10,6 +10,7 @@ from support_chatbot.domain.models import (
     FeedbackRequest,
     IngestManualRequest,
     IngestManualResponse,
+    Source,
 )
 from support_chatbot.settings import AppSettings
 
@@ -26,6 +27,13 @@ class FakeChatService:
         return AskResponse(
             answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}",
             trace_id="trace-123",
+            sources=(
+                Source(
+                    url="https://example.org/manual/page",
+                    title="Example Page",
+                    score=0.87,
+                ),
+            ),
         )
 
     def submit_feedback(self, request: FeedbackRequest) -> None:

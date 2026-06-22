@@ -48,12 +48,28 @@ def render_feedback(index: int, trace_id: str) -> None:
         send_feedback(trace_id, positive=selection == 1)
 
 
+def render_sources(sources: list[dict]) -> None:
+    """Render the manual pages that backed an answer as clickable links."""
+    if not sources:
+        return
+    lines = ["**Sources**"]
+    for source in sources:
+        url = source.get("url")
+        if not url:
+            continue
+        label = source.get("title") or url
+        lines.append(f"- [{label}]({url})")
+    st.markdown("\n".join(lines))
+
+
 # Display chat messages from history on app rerun
 for index, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        if message["role"] == "assistant" and message.get("trace_id"):
-            render_feedback(index, message["trace_id"])
+        if message["role"] == "assistant":
+            render_sources(message.get("sources", []))
+            if message.get("trace_id"):
+                render_feedback(index, message["trace_id"])
 
 # Accept user input
 if prompt := st.chat_input():
@@ -74,18 +90,26 @@ if prompt := st.chat_input():
     )
 
     trace_id = None
+    sources = []
     if answer.status_code != 200:
         response = f"Request failed: {answer.status_code}"
     else:
         body = answer.json()
         response = body["answer"]
         trace_id = body.get("trace_id")
+        sources = body.get("sources", [])
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(response)
+        render_sources(sources)
     # Add assistant response to chat history
     st.session_state.messages.append(
-        {"role": "assistant", "content": response, "trace_id": trace_id}
+        {
+            "role": "assistant",
+            "content": response,
+            "trace_id": trace_id,
+            "sources": sources,
+        }
     )
     if trace_id:
         render_feedback(len(st.session_state.messages) - 1, trace_id)

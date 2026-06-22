@@ -18,7 +18,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from openai import OpenAIError
 
 from support_chatbot.domain.errors import ExternalServiceError
-from support_chatbot.domain.models import AskResponse
+from support_chatbot.domain.models import AskResponse, Source
 from support_chatbot.domain.ports import ConversationEngine, VectorStoreProvider
 from support_chatbot.settings import AppSettings
 
@@ -72,7 +72,11 @@ class LangGraphConversationEngine(ConversationEngine):
             """Retrieve information related to a query."""
             manual_id = config["configurable"]["manual_id"]
             vector_store = self._provider.get_store(manual_id)
-            retrieved_docs = vector_store.similarity_search(query, k=5)
+            retrieved = vector_store.similarity_search_with_score(query, k=5)
+            retrieved_docs = []
+            for doc, score in retrieved:
+                doc.metadata["score"] = score
+                retrieved_docs.append(doc)
             serialized = "\n\n".join(
                 f"Document: {doc.page_content}" for doc in retrieved_docs
             )
@@ -164,7 +168,47 @@ class LangGraphConversationEngine(ConversationEngine):
             raise ExternalServiceError(
                 f"Chat completion failed for manual {manual_id!r}: {exc}"
             ) from exc
-        return AskResponse(answer=response["messages"][-1].content, trace_id=trace_id)
+        return AskResponse(
+            answer=response["messages"][-1].content,
+            trace_id=trace_id,
+            sources=self._extract_sources(response["messages"]),
+        )
+
+    @staticmethod
+    def _extract_sources(messages: list) -> tuple[Source, ...]:
+        """Collect the retrieved manual pages backing the latest answer.
+
+        Only the final contiguous block of tool messages is considered, so
+        sources reflect the current turn rather than the whole conversation.
+        Pages are deduplicated by URL while preserving retrieval rank.
+        """
+        tool_messages = []
+        seen_tool = False
+        for message in reversed(messages):
+            if getattr(message, "type", None) == "tool":
+                seen_tool = True
+                tool_messages.append(message)
+            elif seen_tool:
+                break
+        tool_messages.reverse()
+
+        sources: list[Source] = []
+        seen_urls: set[str] = set()
+        for message in tool_messages:
+            for doc in getattr(message, "artifact", None) or []:
+                metadata = getattr(doc, "metadata", None) or {}
+                url = metadata.get("source")
+                if not url or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                sources.append(
+                    Source(
+                        url=url,
+                        title=metadata.get("title"),
+                        score=metadata.get("score"),
+                    )
+                )
+        return tuple(sources)
 
     def score(
         self,

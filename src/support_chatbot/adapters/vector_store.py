@@ -126,6 +126,12 @@ class AzureVectorStore(VectorStore):
 
     def similarity_search(self, query: str, k: int = 10) -> list[Document]:
         """Return the nearest documents for a query string."""
+        return [doc for doc, _ in self.similarity_search_with_score(query, k)]
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 10
+    ) -> list[tuple[Document, float]]:
+        """Return the nearest documents paired with their Azure relevance score."""
         try:
             query_vector = self.embeddings.embed_query(query)
         except OpenAIError as exc:
@@ -144,7 +150,7 @@ class AzureVectorStore(VectorStore):
             select=["content", "source", "metadata_json"],
         )
 
-        docs: list[Document] = []
+        scored_docs: list[tuple[Document, float]] = []
         try:
             for result in results:
                 metadata = {}
@@ -157,14 +163,20 @@ class AzureVectorStore(VectorStore):
                 source = result.get("source")
                 if source and "source" not in metadata:
                     metadata["source"] = source
-                docs.append(
-                    Document(page_content=result.get("content", ""), metadata=metadata)
+                score = result.get("@search.score")
+                scored_docs.append(
+                    (
+                        Document(
+                            page_content=result.get("content", ""), metadata=metadata
+                        ),
+                        float(score) if score is not None else 0.0,
+                    )
                 )
         except HttpResponseError as exc:
             raise ExternalServiceError(
                 f"Failed to search index {self.index_name!r}: {exc.message or exc}"
             ) from exc
-        return docs
+        return scored_docs
 
 
 class AzureVectorStoreProvider(VectorStoreProvider):

@@ -46,6 +46,24 @@ def test_ask_returns_trace_id(client):
     assert response.json()["trace_id"] == "trace-123"
 
 
+def test_ask_returns_sources(client):
+    """Expose the manual pages that backed the answer with their links."""
+    response = client.post(
+        "/ask",
+        headers={"Authorization": "read-key"},
+        json={"question": "hello", "manual_id": "121"},
+    )
+    assert response.status_code == 200
+    sources = response.json()["sources"]
+    assert sources == [
+        {
+            "url": "https://example.org/manual/page",
+            "title": "Example Page",
+            "score": 0.87,
+        }
+    ]
+
+
 def test_feedback_requires_read_key(client):
     """Reject feedback submissions without the read API key."""
     response = client.post(
