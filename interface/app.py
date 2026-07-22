@@ -74,38 +74,6 @@ def linkify_citations(text: str, sources: list[dict]) -> str:
     return re.sub(r"\[(\d{1,2})\]", _replace, text)
 
 
-def cited_indices(text: str, source_count: int) -> set[int]:
-    """Return the 1-based source numbers referenced by ``[n]`` markers in text.
-
-    Only markers whose number falls within the available source range are
-    kept, so out-of-range brackets (e.g. a year like ``[2024]``) are ignored.
-    """
-    return {
-        index
-        for match in re.findall(r"\[(\d{1,2})\]", text)
-        if 1 <= (index := int(match)) <= source_count
-    }
-
-
-def render_sources(text: str, sources: list[dict]) -> None:
-    """Render only the manual pages actually cited inline as clickable links."""
-    if not sources:
-        return
-    cited = cited_indices(text, len(sources))
-    lines = ["**Sources**"]
-    for number, source in enumerate(sources, start=1):
-        if number not in cited:
-            continue
-        url = source.get("url")
-        if not url:
-            continue
-        label = source.get("title") or url
-        lines.append(f"- [{label}]({url})")
-    if len(lines) == 1:
-        return
-    st.markdown("\n".join(lines))
-
-
 # Display chat messages from history on app rerun
 for index, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
@@ -113,7 +81,6 @@ for index, message in enumerate(st.session_state.messages):
             st.markdown(
                 linkify_citations(message["content"], message.get("sources", []))
             )
-            render_sources(message["content"], message.get("sources", []))
             if message.get("trace_id"):
                 render_feedback(index, message["trace_id"])
         else:
@@ -149,7 +116,6 @@ if prompt := st.chat_input():
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(linkify_citations(response, sources))
-        render_sources(response, sources)
     # Add assistant response to chat history
     st.session_state.messages.append(
         {
