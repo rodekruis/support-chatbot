@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from support_chatbot.domain.models import AskRequest, AskResponse, FeedbackRequest
+from collections.abc import Iterator
+
+from support_chatbot.domain.models import (
+    AnswerComplete,
+    AnswerToken,
+    AskRequest,
+    AskResponse,
+    FeedbackRequest,
+)
 from support_chatbot.domain.ports import ConversationEngine, PromptProvider
 
 
@@ -18,6 +26,17 @@ class ChatService:
         """Ask the chatbot a question and return the final assistant reply."""
         system_prompt = self._prompts.get_product_prompt(request.manual_id)
         return self._engine.answer(
+            question=request.question,
+            session_id=request.session_id,
+            manual_id=request.manual_id,
+            system_prompt=system_prompt,
+            user_id=request.user_id,
+        )
+
+    def stream(self, request: AskRequest) -> Iterator[AnswerToken | AnswerComplete]:
+        """Stream the chatbot's answer, ending with an AnswerComplete event."""
+        system_prompt = self._prompts.get_product_prompt(request.manual_id)
+        yield from self._engine.stream(
             question=request.question,
             session_id=request.session_id,
             manual_id=request.manual_id,

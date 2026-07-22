@@ -7,9 +7,16 @@ through stable, domain-defined interfaces.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Protocol, runtime_checkable
 
-from support_chatbot.domain.models import AskResponse, Document, ManualConfig
+from support_chatbot.domain.models import (
+    AnswerComplete,
+    AnswerToken,
+    AskResponse,
+    Document,
+    ManualConfig,
+)
 
 
 @runtime_checkable
@@ -99,6 +106,18 @@ class ConversationEngine(Protocol):
         user_id: str | None = None,
     ) -> AskResponse:
         """Return the assistant's reply (with an optional trace id) for a question."""
+        ...
+
+    def stream(
+        self,
+        *,
+        question: str,
+        session_id: str,
+        manual_id: str,
+        system_prompt: str,
+        user_id: str | None = None,
+    ) -> Iterator[AnswerToken | AnswerComplete]:
+        """Stream the answer as tokens, ending with a single AnswerComplete event."""
         ...
 
     def score(

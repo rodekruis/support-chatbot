@@ -4,7 +4,7 @@ Provides level-1 support for 510's products and services.
  
 ## Description
 
-Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) and OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
+Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) / [langgraph](https://github.com/langchain-ai/langgraph) and Azure OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ## API Usage
 
@@ -48,7 +48,15 @@ accordingly per deployment (`prod` keeps the bare name). Both `/ask`
 and `/ingest-manual` require a `manual_id`:
 
 - `POST /ask` — body `{"question": "...", "manual_id": "121"}`. Selects the
-  manual's prompt and searches its index.
+  manual's prompt, searches its index, and returns the answer with inline `[n]`
+  citations and the backing `sources`. Optional body fields: `session_id`
+  (groups a user's turns into one conversation/memory thread; a fresh id is
+  generated per request when omitted, i.e. stateless) and `user_id` (attributed
+  in Langfuse tracing).
+- `POST /ask/stream` — same request body, but streams the answer as
+  newline-delimited JSON (NDJSON): `{"type": "token", "text": ...}` fragments,
+  a final `{"type": "done", "trace_id": ..., "sources": [...]}`, or
+  `{"type": "error", "message": ...}` if generation fails mid-stream.
 - `POST /ingest-manual?manual_id=121` — scrapes the manual and rebuilds
   its index.
 

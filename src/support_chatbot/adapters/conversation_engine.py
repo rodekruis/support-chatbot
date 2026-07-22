@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Iterator
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -19,7 +20,12 @@ from langgraph.graph import END, MessagesState, StateGraph
 from openai import OpenAIError
 
 from support_chatbot.domain.errors import ExternalServiceError
-from support_chatbot.domain.models import AskResponse, Source
+from support_chatbot.domain.models import (
+    AnswerComplete,
+    AnswerToken,
+    AskResponse,
+    Source,
+)
 from support_chatbot.domain.ports import (
     ConversationEngine,
     PromptProvider,
@@ -58,6 +64,7 @@ class LangGraphConversationEngine(ConversationEngine):
             temperature=0.2,
         )
         self._citations_enabled = settings.citations_enabled
+        self._retrieval_k = settings.retrieval_k
         self._citation_prompt = (
             prompt_provider.get_citation_prompt()
             if settings.citations_enabled
@@ -90,7 +97,9 @@ class LangGraphConversationEngine(ConversationEngine):
             question = state["messages"][-1].content
             manual_id = config["configurable"]["manual_id"]
             vector_store = self._provider.get_store(manual_id)
-            retrieved = vector_store.similarity_search_with_score(question, k=8)
+            retrieved = vector_store.similarity_search_with_score(
+                question, k=self._retrieval_k
+            )
             docs: list = []
             seen_urls: set[str] = set()
             for doc, score in retrieved:
@@ -155,22 +164,7 @@ class LangGraphConversationEngine(ConversationEngine):
         user_id: str | None = None,
     ) -> AskResponse:
         """Return the assistant's reply (with an optional trace id) for a question."""
-        config: dict = {
-            "configurable": {"thread_id": session_id, "manual_id": manual_id}
-        }
-        trace_id: str | None = None
-        if self._langfuse is not None:
-            from langfuse.langchain import CallbackHandler
-
-            trace_id = self._langfuse.create_trace_id()
-            config["callbacks"] = [
-                CallbackHandler(trace_context={"trace_id": trace_id})
-            ]
-            config["metadata"] = {
-                "langfuse_session_id": session_id,
-                "langfuse_user_id": user_id or session_id,
-                "langfuse_tags": [f"manual:{manual_id}"],
-            }
+        config, trace_id = self._build_run_config(session_id, manual_id, user_id)
         try:
             response = self._graph.invoke(
                 {
@@ -188,6 +182,65 @@ class LangGraphConversationEngine(ConversationEngine):
             trace_id=trace_id,
             sources=self._extract_sources(response.get("retrieved_docs") or []),
         )
+
+    def stream(
+        self,
+        *,
+        question: str,
+        session_id: str,
+        manual_id: str,
+        system_prompt: str,
+        user_id: str | None = None,
+    ) -> Iterator[AnswerToken | AnswerComplete]:
+        """Stream the answer token-by-token, then a final AnswerComplete event.
+
+        Only tokens from the ``generate`` node are surfaced. Sources are read
+        from the final graph state once generation finishes, so the terminal
+        event carries the same trace id and sources as :meth:`answer`.
+        """
+        config, trace_id = self._build_run_config(session_id, manual_id, user_id)
+        inputs = {
+            "messages": [{"role": "user", "content": question}],
+            "system_prompt": system_prompt,
+        }
+        try:
+            for chunk, metadata in self._graph.stream(
+                inputs, config=config, stream_mode="messages"
+            ):
+                if metadata.get("langgraph_node") != "generate":
+                    continue
+                content = getattr(chunk, "content", "")
+                if isinstance(content, str) and content:
+                    yield AnswerToken(text=content)
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Chat completion failed for manual {manual_id!r}: {exc}"
+            ) from exc
+        state = self._graph.get_state(config)
+        sources = self._extract_sources(state.values.get("retrieved_docs") or [])
+        yield AnswerComplete(trace_id=trace_id, sources=sources)
+
+    def _build_run_config(
+        self, session_id: str, manual_id: str, user_id: str | None
+    ) -> tuple[dict, str | None]:
+        """Build the LangGraph run config and (optional) Langfuse trace id."""
+        config: dict = {
+            "configurable": {"thread_id": session_id, "manual_id": manual_id}
+        }
+        trace_id: str | None = None
+        if self._langfuse is not None:
+            from langfuse.langchain import CallbackHandler
+
+            trace_id = self._langfuse.create_trace_id()
+            config["callbacks"] = [
+                CallbackHandler(trace_context={"trace_id": trace_id})
+            ]
+            config["metadata"] = {
+                "langfuse_session_id": session_id,
+                "langfuse_user_id": user_id or session_id,
+                "langfuse_tags": [f"manual:{manual_id}"],
+            }
+        return config, trace_id
 
     @staticmethod
     def _extract_sources(docs: list) -> tuple[Source, ...]:

@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 
 from support_chatbot.api.app import create_app
 from support_chatbot.domain.models import (
+    AnswerComplete,
+    AnswerToken,
     AskRequest,
     AskResponse,
     FeedbackRequest,
@@ -26,6 +28,21 @@ class FakeChatService:
         """Echo the request arguments in a predictable response."""
         return AskResponse(
             answer=f"echo:{request.question}:{request.session_id}:{request.manual_id}",
+            trace_id="trace-123",
+            sources=(
+                Source(
+                    url="https://example.org/manual/page",
+                    title="Example Page",
+                    score=0.87,
+                ),
+            ),
+        )
+
+    def stream(self, request: AskRequest):
+        """Yield the echoed answer as two tokens then a completion event."""
+        yield AnswerToken(text=f"echo:{request.question}")
+        yield AnswerToken(text=f":{request.manual_id}")
+        yield AnswerComplete(
             trace_id="trace-123",
             sources=(
                 Source(

@@ -31,9 +31,13 @@ class AppSettings(BaseSettings):
     model_chat: str = Field(alias="MODEL_CHAT")
     model_embeddings: str = Field(alias="MODEL_EMBEDDINGS")
 
-    # Post-process answers with inline [n] citations mapping to the retrieved
-    # sources, via a separate LLM step reusing MODEL_CHAT. Enabled by default;
-    # any failure falls back to the plain, un-annotated answer.
+    # Number of manual pages retrieved per question. Lower values reduce
+    # retrieval and generation latency (and cost) at the risk of missing
+    # relevant context.
+    retrieval_k: int = Field(default=8, ge=1, alias="RETRIEVAL_K")
+
+    # Add inline [n] citations to answers, mapping to the retrieved sources.
+    # Generated in the same pass as the answer. Enabled by default.
     citations_enabled: bool = Field(default=True, alias="CITATIONS_ENABLED")
     # Optional, evaluation-only: a separate (ideally stronger) deployment used as
     # the LLM-as-judge in the offline RAG quality tests. Kept distinct from

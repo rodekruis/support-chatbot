@@ -57,6 +57,21 @@ class AskResponse:
 
 
 @dataclass(frozen=True)
+class AnswerToken:
+    """A streamed fragment of the assistant's answer text."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class AnswerComplete:
+    """Terminal streaming event carrying the trace id and backing sources."""
+
+    trace_id: str | None = None
+    sources: tuple[Source, ...] = ()
+
+
+@dataclass(frozen=True)
 class FeedbackRequest:
     """User feedback (thumbs up/down) on a previously generated answer."""
 

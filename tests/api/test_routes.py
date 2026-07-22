@@ -13,6 +13,34 @@ def test_ask_requires_read_key(client):
     assert response.status_code == 401
 
 
+def test_ask_stream_requires_read_key(client):
+    """Reject streaming chat requests without the read API key."""
+    response = client.post(
+        "/ask/stream", json={"question": "hello", "manual_id": "121"}
+    )
+    assert response.status_code == 401
+
+
+def test_ask_stream_yields_token_and_done_events(client):
+    """Stream NDJSON token events followed by a terminal done event."""
+    import json
+
+    response = client.post(
+        "/ask/stream",
+        headers={"Authorization": "read-key"},
+        json={"question": "hello", "manual_id": "121"},
+    )
+    assert response.status_code == 200
+    events = [json.loads(line) for line in response.text.splitlines() if line]
+
+    tokens = [e for e in events if e["type"] == "token"]
+    done = [e for e in events if e["type"] == "done"]
+    assert "".join(t["text"] for t in tokens) == "echo:hello:121"
+    assert len(done) == 1
+    assert done[0]["trace_id"] == "trace-123"
+    assert done[0]["sources"][0]["url"] == "https://example.org/manual/page"
+
+
 def test_ask_returns_answer_with_read_key(client):
     """Return the chat answer when the read API key is present."""
     response = client.post(

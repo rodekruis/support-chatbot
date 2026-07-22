@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import uuid
@@ -103,29 +104,44 @@ if prompt := st.chat_input():
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # make a POST request to chat API
-    answer = requests.post(
-        f"{API_BASE_URL}/ask",
-        headers={"Authorization": api_key},
-        json={
-            "question": prompt,
-            "manual_id": manual_id,
-            "session_id": st.session_state.session_id,
-        },
-    )
-
+    # stream the answer from the chat API, rendering tokens as they arrive
     trace_id = None
     sources = []
-    if answer.status_code != 200:
-        response = f"Request failed: {answer.status_code}"
-    else:
-        body = answer.json()
-        response = body["answer"]
-        trace_id = body.get("trace_id")
-        sources = body.get("sources", [])
-    # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        st.markdown(linkify_citations(response, sources))
+        placeholder = st.empty()
+        accumulated = ""
+        try:
+            with requests.post(
+                f"{API_BASE_URL}/ask/stream",
+                headers={"Authorization": api_key},
+                json={
+                    "question": prompt,
+                    "manual_id": manual_id,
+                    "session_id": st.session_state.session_id,
+                },
+                stream=True,
+                timeout=120,
+            ) as stream:
+                if stream.status_code != 200:
+                    accumulated = f"Request failed: {stream.status_code}"
+                else:
+                    for line in stream.iter_lines():
+                        if not line:
+                            continue
+                        event = json.loads(line)
+                        if event["type"] == "token":
+                            accumulated += event["text"]
+                            placeholder.markdown(accumulated + "▌")
+                        elif event["type"] == "done":
+                            trace_id = event.get("trace_id")
+                            sources = event.get("sources", [])
+                        elif event["type"] == "error":
+                            accumulated += "\n\n_Sorry, something went wrong._"
+        except requests.RequestException as exc:
+            accumulated = f"Request failed: {exc}"
+        # final render with citations turned into links
+        placeholder.markdown(linkify_citations(accumulated, sources))
+    response = accumulated
     # Add assistant response to chat history
     st.session_state.messages.append(
         {
