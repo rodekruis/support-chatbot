@@ -17,7 +17,9 @@ with st.sidebar:
         "support-chatbot API Key", key="chatbot_api_key", type="password"
     )
     manual_id = st.text_input("Manual", key="manual_id", value="121")
-    environment = st.selectbox("Environment", ("prod", "dev"), key="environment", default="dev")
+    environment = st.selectbox(
+        "Environment", ("prod", "dev"), key="environment", index=1
+    )
 
 API_BASE_URL = API_BASE_URLS[environment]
 
