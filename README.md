@@ -24,7 +24,7 @@ Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh
 
 The chatbot can serve multiple manuals (documentation sites). Each manual is
 defined in [`manuals.yaml`](./src/support_chatbot/config/manuals.yaml) with the
-URLs to scrape, chunking settings, and an optional per-manual system prompt:
+URLs to scrape and chunking settings:
 
 ```yaml
 manuals:
@@ -35,14 +35,10 @@ manuals:
       - "https://manual.121.global/en/nlrc"
     chunk_size: 1000
     chunk_overlap: 200
-    # Optional: a Markdown prompt relative to the support_chatbot package.
-    # Falls back to prompts/support_chatbot_prompt.md when omitted.
-    # prompt_file: "prompts/manual_121.md"
 ```
 
-To add a manual: add an entry to `manuals.yaml`, optionally add a prompt
-Markdown file under [`prompts/`](./src/support_chatbot/prompts/), then index it
-(see below).
+To add a manual: add an entry to `manuals.yaml`, create its prompt in Langfuse
+(see [Prompts](#prompts)), then index it (see below).
 
 Each manual is stored in its own search index named
 `support-chatbot-index-{manual_id}` (e.g. `support-chatbot-index-121`). Non-prod
@@ -59,6 +55,22 @@ and `/ingest-manual` require a `manual_id`:
 > **Migration:** index naming changed from `support-chatbot-index` to
 > `support-chatbot-index-{manual_id}`. Run `POST /ingest-manual?manual_id=121`
 > once to populate the new index; the old index can then be deleted.
+
+### Prompts
+
+System prompts are loaded at runtime from [Langfuse](https://langfuse.com/)
+prompt management (not from files), so they can be edited and versioned without
+a redeploy. Langfuse credentials (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`,
+`LANGFUSE_BASE_URL`) are therefore **required**. Two text prompts must exist:
+
+- `citations` — product-agnostic; adds inline `[n]` citations to answers.
+- `<manual_id>` — one per manual/product (e.g. `121`); used as that manual's
+  system prompt. `POST /ask` fetches the prompt whose name equals the request's
+  `manual_id`.
+
+The prompt version fetched is selected by a Langfuse label derived from
+`ENVIRONMENT`: `prod` maps to the `Production` label; other environments use
+their own name (e.g. `dev`).
 
 ### Run locally
 

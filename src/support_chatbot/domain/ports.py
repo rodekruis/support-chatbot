@@ -64,6 +64,24 @@ class VectorStoreProvider(Protocol):
 
 
 @runtime_checkable
+class PromptProvider(Protocol):
+    """Supplies the system prompts used to steer the language model.
+
+    Isolates the services and adapter layers from where prompts actually live
+    (e.g. a prompt-management backend), so prompt text can change without a
+    redeploy and without any framework specifics leaking into the core.
+    """
+
+    def get_product_prompt(self, product: str) -> str:
+        """Return the product-specific system prompt for a product id."""
+        ...
+
+    def get_citation_prompt(self) -> str:
+        """Return the product-agnostic prompt used to add inline citations."""
+        ...
+
+
+@runtime_checkable
 class ConversationEngine(Protocol):
     """Generates an answer for a question using retrieval and a language model.
 
@@ -75,9 +93,10 @@ class ConversationEngine(Protocol):
         self,
         *,
         question: str,
-        thread_id: str,
+        session_id: str,
         manual_id: str,
         system_prompt: str,
+        user_id: str | None = None,
     ) -> AskResponse:
         """Return the assistant's reply (with an optional trace id) for a question."""
         ...

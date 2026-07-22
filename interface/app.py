@@ -1,5 +1,6 @@
 import os
 import re
+import uuid
 
 import requests
 import streamlit as st
@@ -42,6 +43,11 @@ def send_feedback(trace_id: str, positive: bool) -> None:
 
 st.title("support-chatbot")
 st.caption("Ask questions about 510's products and services.")
+
+# One conversation id per browser session, so a user's turns share memory
+# without colliding with other users.
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -101,7 +107,11 @@ if prompt := st.chat_input():
     answer = requests.post(
         f"{API_BASE_URL}/ask",
         headers={"Authorization": api_key},
-        json={"question": prompt, "manual_id": manual_id},
+        json={
+            "question": prompt,
+            "manual_id": manual_id,
+            "session_id": st.session_state.session_id,
+        },
     )
 
     trace_id = None

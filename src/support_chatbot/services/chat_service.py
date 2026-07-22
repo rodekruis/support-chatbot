@@ -2,32 +2,27 @@
 
 from __future__ import annotations
 
-from support_chatbot.config.manuals import get_manual_prompt
 from support_chatbot.domain.models import AskRequest, AskResponse, FeedbackRequest
-from support_chatbot.domain.ports import ConversationEngine
+from support_chatbot.domain.ports import ConversationEngine, PromptProvider
 
 
 class ChatService:
     """Coordinate prompt loading and delegate answering to a conversation engine."""
 
-    def __init__(self, engine: ConversationEngine) -> None:
-        """Initialize with the conversation engine used to generate answers."""
+    def __init__(self, engine: ConversationEngine, prompts: PromptProvider) -> None:
+        """Initialize with the conversation engine and prompt provider."""
         self._engine = engine
-        self._prompt_cache: dict[str, str] = {}
-
-    def _get_prompt(self, manual_id: str) -> str:
-        if manual_id not in self._prompt_cache:
-            self._prompt_cache[manual_id] = get_manual_prompt(manual_id)
-        return self._prompt_cache[manual_id]
+        self._prompts = prompts
 
     def ask(self, request: AskRequest) -> AskResponse:
         """Ask the chatbot a question and return the final assistant reply."""
-        system_prompt = self._get_prompt(request.manual_id)
+        system_prompt = self._prompts.get_product_prompt(request.manual_id)
         return self._engine.answer(
             question=request.question,
-            thread_id=request.thread_id,
+            session_id=request.session_id,
             manual_id=request.manual_id,
             system_prompt=system_prompt,
+            user_id=request.user_id,
         )
 
     def submit_feedback(self, request: FeedbackRequest) -> None:

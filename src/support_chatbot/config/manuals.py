@@ -17,7 +17,6 @@ import yaml
 from support_chatbot.domain.models import ManualConfig
 
 _MANUALS_RESOURCE = "manuals.yaml"
-_DEFAULT_PROMPT_FILE = "prompts/support_chatbot_prompt.md"
 
 
 @lru_cache(maxsize=1)
@@ -48,7 +47,6 @@ def _load_registry() -> dict[str, ManualConfig]:
             exclude_dirs=tuple(item.get("exclude_dirs", [])),
             chunk_size=int(chunk_size) if chunk_size is not None else None,
             chunk_overlap=int(chunk_overlap) if chunk_overlap is not None else None,
-            prompt_file=item.get("prompt_file"),
             strip_boilerplate=bool(item.get("strip_boilerplate", True)),
             boilerplate_threshold=float(item.get("boilerplate_threshold", 0.9)),
         )
@@ -72,14 +70,3 @@ def get_manual_config(manual_id: str) -> ManualConfig:
     except KeyError as exc:
         valid = ", ".join(sorted(registry))
         raise ValueError(f"Unknown manual_id: {manual_id!r}. Valid options: {valid}") from exc
-
-
-def get_manual_prompt(manual_id: str) -> str:
-    """Return the system prompt for a manual.
-
-    Uses the manual's ``prompt_file`` if set, otherwise the packaged default
-    prompt. Paths are resolved relative to the ``support_chatbot`` package so
-    prompt files ship with the package.
-    """
-    prompt_file = get_manual_config(manual_id).prompt_file or _DEFAULT_PROMPT_FILE
-    return resources.files("support_chatbot").joinpath(prompt_file).read_text(encoding="utf-8")

@@ -1,6 +1,8 @@
 """FastAPI routes for chat, admin, and health endpoints."""
 
-from fastapi import APIRouter, Depends, Request
+import uuid
+
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 
 from support_chatbot.api.dependencies import (
@@ -40,17 +42,17 @@ async def docs_redirect() -> RedirectResponse:
 @router.post("/ask", response_model=QuestionResponse, tags=["chat"])
 async def ask_question(
     payload: QuestionRequest,
-    request: Request,
     _: None = Depends(require_read_key),
     chat_service=Depends(get_chat_service),
 ) -> QuestionResponse:
     """Ask the chatbot a question and return the generated answer."""
-    client_host = request.client.host if request.client else "unknown"
+    session_id = payload.session_id or str(uuid.uuid4())
     result = chat_service.ask(
         AskRequest(
             question=payload.question,
-            thread_id=client_host,
+            session_id=session_id,
             manual_id=payload.manual_id,
+            user_id=payload.user_id,
         )
     )
     return QuestionResponse(

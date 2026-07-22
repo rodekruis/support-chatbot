@@ -48,7 +48,7 @@ def test_rag_answer_quality(manual_id, question, chat_service, provider, judge_m
     answer = chat_service.ask(
         AskRequest(
             question=question,
-            thread_id=f"eval-{uuid.uuid4()}",
+            session_id=f"eval-{uuid.uuid4()}",
             manual_id=manual_id,
         )
     ).answer

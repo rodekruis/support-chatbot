@@ -25,7 +25,7 @@ class FakeChatService:
     def ask(self, request: AskRequest) -> AskResponse:
         """Echo the request arguments in a predictable response."""
         return AskResponse(
-            answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}",
+            answer=f"echo:{request.question}:{request.session_id}:{request.manual_id}",
             trace_id="trace-123",
             sources=(
                 Source(
