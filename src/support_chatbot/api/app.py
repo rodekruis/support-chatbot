@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,28 +13,21 @@ from support_chatbot.adapters.conversation_engine import LangGraphConversationEn
 from support_chatbot.adapters.document_loader import KreuzbergDocumentLoader
 from support_chatbot.adapters.vector_store import AzureVectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
+from support_chatbot.api.log import setup_logging
 from support_chatbot.api.middleware import RequestIdMiddleware, RequestLoggingMiddleware
 from support_chatbot.api.routes import router
+from support_chatbot.config.manuals import available_manual_ids
 from support_chatbot.services.chat_service import ChatService
 from support_chatbot.services.manual_ingestion_service import ManualIngestionService
 from support_chatbot.settings import AppSettings
 
+logger = logging.getLogger(__name__)
+
 DESCRIPTION = """
-Offers level-1 support for products and services.
+Offers level-1 support for 510's products and services.
 
 Built by [NLRC 510](https://www.510.global/).
 """
-
-
-def _setup_logging() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        stream=sys.stdout,
-        force=True,
-    )
-    for noisy_logger in ("urllib3", "azure", "requests_oauthlib"):
-        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
 
 def create_app(
@@ -49,12 +41,20 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        _setup_logging()
+        setup_logging()
         app.state.settings = app_settings
 
         provider = None
         if chat_service_factory is None or ingestion_service_factory is None:
             provider = AzureVectorStoreProvider(app_settings)
+            logger.info(
+                "Resolved vector store indexes for environment %r: %s",
+                app_settings.environment,
+                {
+                    manual_id: provider.index_name(manual_id)
+                    for manual_id in available_manual_ids()
+                },
+            )
 
         engine = None
         if chat_service_factory is None:

@@ -17,6 +17,7 @@ from support_chatbot.api.schemas import (
     ModelsResponse,
     QuestionRequest,
     QuestionResponse,
+    Source,
 )
 from support_chatbot.domain.models import (
     AskRequest,
@@ -52,7 +53,14 @@ async def ask_question(
             manual_id=payload.manual_id,
         )
     )
-    return QuestionResponse(answer=result.answer, trace_id=result.trace_id)
+    return QuestionResponse(
+        answer=result.answer,
+        trace_id=result.trace_id,
+        sources=[
+            Source(url=source.url, title=source.title, score=source.score)
+            for source in result.sources
+        ],
+    )
 
 
 @router.post(

@@ -13,12 +13,16 @@ class AppSettings(BaseSettings):
 
     port: int = Field(default=8000, alias="PORT")
 
+    # Deployment environment (e.g. "prod", "dev"). Used to namespace the vector
+    # store indexes so a non-prod deployment never overwrites the prod data.
+    # "prod" keeps the bare index name for backward compatibility.
+    environment: str = Field(default="prod", alias="ENVIRONMENT")
+
     auth_api_key: SecretStr = Field(alias="AUTH_API_KEY")
     auth_api_key_write: SecretStr = Field(alias="AUTH_API_KEY_WRITE")
 
     vector_store_address: str = Field(alias="VECTOR_STORE_ADDRESS")
     vector_store_password: SecretStr = Field(alias="VECTOR_STORE_PASSWORD")
-    vector_store_id: str = Field(alias="VECTOR_STORE_ID")
 
     azure_openai_endpoint: str = Field(alias="AZURE_OPENAI_ENDPOINT")
     azure_openai_api_key: SecretStr = Field(alias="AZURE_OPENAI_API_KEY")
@@ -26,6 +30,11 @@ class AppSettings(BaseSettings):
 
     model_chat: str = Field(alias="MODEL_CHAT")
     model_embeddings: str = Field(alias="MODEL_EMBEDDINGS")
+
+    # Post-process answers with inline [n] citations mapping to the retrieved
+    # sources, via a separate LLM step reusing MODEL_CHAT. Enabled by default;
+    # any failure falls back to the plain, un-annotated answer.
+    citations_enabled: bool = Field(default=True, alias="CITATIONS_ENABLED")
     # Optional, evaluation-only: a separate (ideally stronger) deployment used as
     # the LLM-as-judge in the offline RAG quality tests. Kept distinct from
     # MODEL_CHAT so a model never grades its own output (self-preference bias).

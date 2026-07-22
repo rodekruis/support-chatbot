@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -21,7 +22,9 @@ from azure.search.documents.indexes.models import (
 )
 from azure.search.documents.models import VectorizedQuery
 from langchain_openai import AzureOpenAIEmbeddings
+from openai import OpenAIError
 
+from support_chatbot.domain.errors import ExternalServiceError
 from support_chatbot.domain.models import Document
 from support_chatbot.domain.ports import VectorStore, VectorStoreProvider
 from support_chatbot.settings import AppSettings
@@ -75,7 +78,13 @@ class AzureVectorStore(VectorStore):
             fields=fields,
             vector_search=vector_search,
         )
-        self._index_client().create_or_update_index(index)
+        try:
+            self._index_client().create_or_update_index(index)
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to create or update search index {self.index_name!r}: "
+                f"{exc.message or exc}"
+            ) from exc
 
     def add_documents(self, docs: list[Document]) -> None:
         """Index a batch of documents in Azure AI Search."""
@@ -84,7 +93,12 @@ class AzureVectorStore(VectorStore):
 
         self._ensure_index()
         contents = [doc.page_content for doc in docs]
-        vectors = self.embeddings.embed_documents(contents)
+        try:
+            vectors = self.embeddings.embed_documents(contents)
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Failed to embed documents for {self.index_name!r}: {exc}"
+            ) from exc
 
         payload = []
         for doc, vector in zip(docs, vectors, strict=False):
@@ -101,47 +115,85 @@ class AzureVectorStore(VectorStore):
 
         search_client = self._search_client()
         batch_size = 100
-        for i in range(0, len(payload), batch_size):
-            search_client.upload_documents(documents=payload[i : i + batch_size])
+        try:
+            for i in range(0, len(payload), batch_size):
+                search_client.upload_documents(documents=payload[i : i + batch_size])
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to index documents in {self.index_name!r}: "
+                f"{exc.message or exc}"
+            ) from exc
 
     def similarity_search(self, query: str, k: int = 10) -> list[Document]:
         """Return the nearest documents for a query string."""
-        query_vector = self.embeddings.embed_query(query)
+        return [doc for doc, _ in self.similarity_search_with_score(query, k)]
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 10
+    ) -> list[tuple[Document, float]]:
+        """Return the nearest documents paired with their Azure relevance score.
+
+        Runs a hybrid query: Azure AI Search combines BM25 keyword search over
+        ``content`` with vector similarity over ``content_vector`` using
+        Reciprocal Rank Fusion. This recovers exact-term matches (feature names,
+        UI labels) that a pure vector search can miss. The returned score is the
+        fused RRF score, which is a relative ranking signal, not a calibrated
+        threshold.
+        """
+        try:
+            query_vector = self.embeddings.embed_query(query)
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Failed to embed query for {self.index_name!r}: {exc}"
+            ) from exc
         vector_query = VectorizedQuery(
             vector=query_vector,
             k_nearest_neighbors=k,
             fields="content_vector",
         )
         results = self._search_client().search(
-            search_text=None,
+            search_text=query,
             vector_queries=[vector_query],
             top=k,
             select=["content", "source", "metadata_json"],
         )
 
-        docs: list[Document] = []
-        for result in results:
-            metadata = {}
-            metadata_json = result.get("metadata_json")
-            if metadata_json:
-                try:
-                    metadata = json.loads(metadata_json)
-                except json.JSONDecodeError:
-                    metadata = {}
-            source = result.get("source")
-            if source and "source" not in metadata:
-                metadata["source"] = source
-            docs.append(
-                Document(page_content=result.get("content", ""), metadata=metadata)
-            )
-        return docs
+        scored_docs: list[tuple[Document, float]] = []
+        try:
+            for result in results:
+                metadata = {}
+                metadata_json = result.get("metadata_json")
+                if metadata_json:
+                    try:
+                        metadata = json.loads(metadata_json)
+                    except json.JSONDecodeError:
+                        metadata = {}
+                source = result.get("source")
+                if source and "source" not in metadata:
+                    metadata["source"] = source
+                score = result.get("@search.score")
+                scored_docs.append(
+                    (
+                        Document(
+                            page_content=result.get("content", ""), metadata=metadata
+                        ),
+                        float(score) if score is not None else 0.0,
+                    )
+                )
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to search index {self.index_name!r}: {exc.message or exc}"
+            ) from exc
+        return scored_docs
 
 
 class AzureVectorStoreProvider(VectorStoreProvider):
     """Provides one Azure Search index per manual.
 
-    Each manual is stored in its own index named ``{vector_store_id}-{manual_id}``
-    so that retrieval for a given manual only searches that manual's content.
+    Each manual is stored in its own index named
+    ``support-chatbot-index-{manual_id}`` (with an ``-{environment}`` suffix in
+    non-prod environments) so that retrieval for a given manual only searches
+    that manual's content, and a non-prod deployment never overwrites prod data.
     Stores are created lazily and cached, while embeddings and the index client
     are shared across all manuals.
     """
@@ -169,18 +221,39 @@ class AzureVectorStoreProvider(VectorStoreProvider):
     def _get_embedding_dimensions(self) -> int:
         """Return the embedding vector size, probing Azure OpenAI once on demand."""
         if self._embedding_dimensions is None:
-            self._embedding_dimensions = len(
-                self._embeddings.embed_query("healthcheck")
-            )
+            try:
+                self._embedding_dimensions = len(
+                    self._embeddings.embed_query("healthcheck")
+                )
+            except OpenAIError as exc:
+                raise ExternalServiceError(
+                    f"Failed to probe embedding model {self._settings.model_embeddings!r}: "
+                    f"{exc}"
+                ) from exc
         return self._embedding_dimensions
 
     def index_name(self, manual_id: str) -> str:
-        """Return the Azure Search index name for a manual."""
-        return f"{self._settings.vector_store_id}-{manual_id}"
+        """Return the Azure Search index name for a manual.
+
+        Non-prod environments get an ``-{environment}`` suffix so that ingesting
+        from e.g. a dev deployment never overwrites the prod index. ``prod`` keeps
+        the bare name for backward compatibility with existing indexes.
+        """
+        base = f"support-chatbot-index-{manual_id}"
+        environment = self._settings.environment
+        if environment and environment != "prod":
+            return f"{base}-{environment}"
+        return base
 
     def delete_index(self, manual_id: str) -> None:
         """Delete the Azure Search index backing a manual."""
-        self._index_client.delete_index(self.index_name(manual_id))
+        index_name = self.index_name(manual_id)
+        try:
+            self._index_client.delete_index(index_name)
+        except HttpResponseError as exc:
+            raise ExternalServiceError(
+                f"Failed to delete search index {index_name!r}: {exc.message or exc}"
+            ) from exc
 
     def get_store(self, manual_id: str) -> AzureVectorStore:
         """Return the cached vector store for a manual, creating it if needed."""

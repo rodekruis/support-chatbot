@@ -1,0 +1,82 @@
+name: ingest manuals
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to ingest into"
+        type: choice
+        options:
+          - dev
+          - prod
+        required: true
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: List configured manuals
+        id: manuals
+        run: |
+          ids=$(uv run -- python -c "from support_chatbot.config.manuals import available_manual_ids; print(' '.join(available_manual_ids()))")
+          echo "Manuals to ingest: $ids"
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger ingestion for all manuals
+        env:
+          WRITE_KEY: ${{ secrets.AUTH_API_KEY_WRITE }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${WRITE_KEY:-}" ]; then
+            echo "::error::AUTH_API_KEY_WRITE secret is not set for the '${{ inputs.environment }}' environment."
+            exit 1
+          fi
+
+          # Derived from the Azure Web App used in the deploy workflows
+          # (app-name 'support-chatbot'). The prod slot is served on the bare
+          # hostname; non-prod slots get a '-${environment}' suffix.
+          if [ "${{ inputs.environment }}" = "prod" ]; then
+            base_url="https://support-chatbot.azurewebsites.net"
+          else
+            base_url="https://support-chatbot-${{ inputs.environment }}.azurewebsites.net"
+          fi
+          failed=0
+
+          for manual_id in ${{ steps.manuals.outputs.ids }}; do
+            echo "::group::Ingesting manual '$manual_id'"
+            status=$(curl -sS -o response.json -w "%{http_code}" \
+              -X POST "$base_url/ingest-manual?manual_id=$manual_id" \
+              -H "Authorization: $WRITE_KEY")
+            echo "HTTP $status"
+            cat response.json || true
+            echo
+
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "::error::Ingestion failed for manual '$manual_id' (HTTP $status)."
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::One or more manuals failed to ingest."
+            exit 1
+          fi
+
+          echo "All manuals ingested successfully into '${{ inputs.environment }}'."

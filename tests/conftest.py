@@ -10,6 +10,7 @@ from support_chatbot.domain.models import (
     FeedbackRequest,
     IngestManualRequest,
     IngestManualResponse,
+    Source,
 )
 from support_chatbot.settings import AppSettings
 
@@ -26,6 +27,13 @@ class FakeChatService:
         return AskResponse(
             answer=f"echo:{request.question}:{request.thread_id}:{request.manual_id}",
             trace_id="trace-123",
+            sources=(
+                Source(
+                    url="https://example.org/manual/page",
+                    title="Example Page",
+                    score=0.87,
+                ),
+            ),
         )
 
     def submit_feedback(self, request: FeedbackRequest) -> None:
@@ -53,7 +61,6 @@ def build_test_settings() -> AppSettings:
             "AUTH_API_KEY_WRITE": "write-key",
             "VECTOR_STORE_ADDRESS": "https://example.search.windows.net",
             "VECTOR_STORE_PASSWORD": "dummy",
-            "VECTOR_STORE_ID": "support-chatbot-index",
             "AZURE_OPENAI_ENDPOINT": "https://example.openai.azure.com",
             "AZURE_OPENAI_API_KEY": "dummy",
             "AZURE_OPENAI_API_VERSION": "2024-06-01",
