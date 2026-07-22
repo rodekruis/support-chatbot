@@ -1,3 +1,4 @@
+import os
 import re
 
 import requests
@@ -12,16 +13,18 @@ API_BASE_URLS = {
     "dev": "https://support-chatbot-dev.azurewebsites.net",
 }
 
+environment = os.getenv("ENVIRONMENT", "dev")
+if environment not in API_BASE_URLS:
+    raise ValueError(
+        f"Unknown ENVIRONMENT {environment!r}; expected one of {sorted(API_BASE_URLS)}."
+    )
+API_BASE_URL = API_BASE_URLS[environment]
+
 with st.sidebar:
     api_key = st.text_input(
         "support-chatbot API Key", key="chatbot_api_key", type="password"
     )
     manual_id = st.text_input("Manual", key="manual_id", value="121")
-    environment = st.selectbox(
-        "Environment", ("prod", "dev"), key="environment", index=1
-    )
-
-API_BASE_URL = API_BASE_URLS[environment]
 
 
 def send_feedback(trace_id: str, positive: bool) -> None:
@@ -71,17 +74,35 @@ def linkify_citations(text: str, sources: list[dict]) -> str:
     return re.sub(r"\[(\d{1,2})\]", _replace, text)
 
 
-def render_sources(sources: list[dict]) -> None:
-    """Render the manual pages that backed an answer as clickable links."""
+def cited_indices(text: str, source_count: int) -> set[int]:
+    """Return the 1-based source numbers referenced by ``[n]`` markers in text.
+
+    Only markers whose number falls within the available source range are
+    kept, so out-of-range brackets (e.g. a year like ``[2024]``) are ignored.
+    """
+    return {
+        index
+        for match in re.findall(r"\[(\d{1,2})\]", text)
+        if 1 <= (index := int(match)) <= source_count
+    }
+
+
+def render_sources(text: str, sources: list[dict]) -> None:
+    """Render only the manual pages actually cited inline as clickable links."""
     if not sources:
         return
+    cited = cited_indices(text, len(sources))
     lines = ["**Sources**"]
-    for source in sources:
+    for number, source in enumerate(sources, start=1):
+        if number not in cited:
+            continue
         url = source.get("url")
         if not url:
             continue
         label = source.get("title") or url
         lines.append(f"- [{label}]({url})")
+    if len(lines) == 1:
+        return
     st.markdown("\n".join(lines))
 
 
@@ -92,7 +113,7 @@ for index, message in enumerate(st.session_state.messages):
             st.markdown(
                 linkify_citations(message["content"], message.get("sources", []))
             )
-            render_sources(message.get("sources", []))
+            render_sources(message["content"], message.get("sources", []))
             if message.get("trace_id"):
                 render_feedback(index, message["trace_id"])
         else:
@@ -128,7 +149,7 @@ if prompt := st.chat_input():
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(linkify_citations(response, sources))
-        render_sources(sources)
+        render_sources(response, sources)
     # Add assistant response to chat history
     st.session_state.messages.append(
         {
