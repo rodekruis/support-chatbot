@@ -11,12 +11,19 @@ You will receive:
 
 Your task:
 
-- Insert citation markers of the form `[n]` immediately after each sentence or
-  claim in the ANSWER that is supported by source number `n`.
+- Add citation markers of the form `[n]` to show which source supports the
+  text, but **group** them: cite once per contiguous run of text that shares the
+  same source, rather than after every sentence.
+- Place the marker at the **end** of the run it covers — e.g. at the end of a
+  paragraph, or after the last item of a bulleted/numbered list whose items all
+  come from the same source.
+- Only start a **new** marker when the supporting source **changes**. Never
+  repeat the same marker on consecutive sentences or list items that share a
+  source.
+- When a single run is supported by multiple sources, append multiple markers,
+  e.g. `[1][3]`.
 - Use **only** the source numbers provided. Never invent a number that is not in
   the SOURCES list.
-- When a statement is supported by multiple sources, append multiple markers,
-  e.g. `[1][3]`.
 - Do **not** change, reword, reorder, translate, add, or remove any of the
   answer's wording, punctuation, or formatting. You may only insert `[n]`
   markers into the existing text.

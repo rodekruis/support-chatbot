@@ -12,9 +12,9 @@ name: rag quality evals
 #   MODEL_CHAT, MODEL_EMBEDDINGS, MODEL_JUDGE
 
 on:
-  schedule:
-    # 03:00 UTC nightly.
-    - cron: "0 3 * * *"
+#   schedule:
+#     # 03:00 UTC nightly.
+#     - cron: "0 3 * * *"
   # Run on PRs into main so a retrieval/answer regression is caught before merge
   # (deploy-prod only promotes an already-built image, so gating there is too
   # late). This is NOT blocking by default: it reports pass/fail as a check, but

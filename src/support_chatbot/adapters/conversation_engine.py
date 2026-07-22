@@ -18,7 +18,7 @@ from langchain_core.tools import tool
 from langchain_openai import AzureChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import ToolNode
 from openai import OpenAIError
 
 from support_chatbot.domain.errors import ExternalServiceError
@@ -99,8 +99,10 @@ class LangGraphConversationEngine(ConversationEngine):
             )
             return serialized, retrieved_docs
 
-        def query_or_respond(state: ChatState):
-            llm_with_tools = self._llm.bind_tools([retrieve])
+        def generate_query(state: ChatState):
+            llm_with_tools = self._llm.bind_tools(
+                [retrieve], tool_choice="retrieve"
+            )
             prompt = [SystemMessage(state["system_prompt"])] + state["messages"]
             response = llm_with_tools.invoke(prompt)
             return {"messages": [response]}
@@ -150,15 +152,11 @@ class LangGraphConversationEngine(ConversationEngine):
             return {"messages": [AIMessage(content=annotated, id=answer_message.id)]}
 
         graph_builder = StateGraph(ChatState)
-        graph_builder.add_node(query_or_respond)
+        graph_builder.add_node(generate_query)
         graph_builder.add_node(tools)
         graph_builder.add_node(generate)
-        graph_builder.set_entry_point("query_or_respond")
-        graph_builder.add_conditional_edges(
-            "query_or_respond",
-            tools_condition,
-            {END: END, "tools": "tools"},
-        )
+        graph_builder.set_entry_point("generate_query")
+        graph_builder.add_edge("generate_query", "tools")
         graph_builder.add_edge("tools", "generate")
         if self._citations_enabled:
             graph_builder.add_node(cite)
