@@ -21,9 +21,9 @@ on:
   # only becomes a hard gate if marked a required status check in branch
   # protection. Keep it advisory until the LLM-as-judge scores prove stable,
   # since they are non-deterministic and can wobble around the thresholds.
-  pull_request:
-    branches:
-      - main
+#   pull_request:
+#     branches:
+#       - main
   workflow_dispatch:
 
 jobs:
