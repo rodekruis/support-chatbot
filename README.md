@@ -6,48 +6,6 @@ Provides level-1 support for 510's products and services.
 
 Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) / [langgraph](https://github.com/langchain-ai/langgraph) and Azure OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
-### Configuration
-
-```sh
-cp example.env .env
-```
-
-Edit the provided [ENV-variables](./example.env) accordingly.
-
-Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh) require `AUTH_API_KEY_WRITE`.
-
-#### Environment variables
-
-**Required**:
-
-| Variable | Description |
-| --- | --- |
-| `AUTH_API_KEY` | API key for read endpoints (`/ask`, `/ask/stream`, `/feedback`). |
-| `AUTH_API_KEY_WRITE` | API key for write endpoints (`/ingest-manual`). |
-| `VECTOR_STORE_ADDRESS` | Azure AI Search endpoint URL. |
-| `VECTOR_STORE_PASSWORD` | Azure AI Search admin/query key. |
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint. |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key. |
-| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version. |
-| `MODEL_CHAT` | Azure OpenAI chat **deployment** name (not the model name). |
-| `MODEL_EMBEDDINGS` | Azure OpenAI embeddings **deployment** name. |
-| `LANGFUSE_PUBLIC_KEY` | Langfuse public key. Required because system prompts are loaded from Langfuse (see [Prompts](#prompts)). |
-| `LANGFUSE_SECRET_KEY` | Langfuse secret key. Required for the same reason. |
-
-**Optional**:
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | `8000` | Port the API binds to. |
-| `ENVIRONMENT` | `prod` | Deployment environment. Namespaces vector-store indexes, selects the Langfuse prompt label, and tags Langfuse traces. `prod` keeps bare index names / the `Production` label. |
-| `RETRIEVAL_K` | `8` | Manual pages retrieved per question. Lower reduces latency/cost at the risk of missing context. |
-| `CITATIONS_ENABLED` | `true` | Add inline `[n]` citations mapping answers to sources. |
-| `MODEL_JUDGE` | _(none)_ | Evaluation-only: separate (stronger) deployment used as LLM-as-judge in offline RAG tests. Unset skips those tests. |
-| `LANGFUSE_BASE_URL` | _(Langfuse cloud)_ | Base URL of a self-hosted Langfuse. Set only when not using Langfuse cloud. |
-
-> Setting the Langfuse keys also enables LLM tracing (latency, token usage,
-> user feedback) in addition to prompt loading.
-
 ### Manuals
 
 The chatbot can serve multiple manuals (documentation sites). Each manual is
@@ -182,6 +140,48 @@ Targeting `chat-turn` (rather than the LLM generation) also ensures the judge
 runs once per answer instead of on every internal LLM call. Traces are tagged
 with `manual:<manual_id>`, carry the request's `session_id`/`user_id`, and are
 namespaced by the `ENVIRONMENT` value (filterable in the Langfuse UI).
+
+### Configuration
+
+```sh
+cp example.env .env
+```
+
+Edit the provided [ENV-variables](./example.env) accordingly.
+
+Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh) require `AUTH_API_KEY_WRITE`.
+
+#### Environment variables
+
+**Required**:
+
+| Variable | Description |
+| --- | --- |
+| `AUTH_API_KEY` | API key for read endpoints (`/ask`, `/ask/stream`, `/feedback`). |
+| `AUTH_API_KEY_WRITE` | API key for write endpoints (`/ingest-manual`). |
+| `VECTOR_STORE_ADDRESS` | Azure AI Search endpoint URL. |
+| `VECTOR_STORE_PASSWORD` | Azure AI Search admin/query key. |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint. |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key. |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version. |
+| `MODEL_CHAT` | Azure OpenAI chat **deployment** name (not the model name). |
+| `MODEL_EMBEDDINGS` | Azure OpenAI embeddings **deployment** name. |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse public key. Required because system prompts are loaded from Langfuse (see [Prompts](#prompts)). |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key. Required for the same reason. |
+
+**Optional**:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `8000` | Port the API binds to. |
+| `ENVIRONMENT` | `prod` | Deployment environment. Namespaces vector-store indexes, selects the Langfuse prompt label, and tags Langfuse traces. `prod` keeps bare index names / the `Production` label. |
+| `RETRIEVAL_K` | `8` | Manual pages retrieved per question. Lower reduces latency/cost at the risk of missing context. |
+| `CITATIONS_ENABLED` | `true` | Add inline `[n]` citations mapping answers to sources. |
+| `MODEL_JUDGE` | _(none)_ | Evaluation-only: separate (stronger) deployment used as LLM-as-judge in offline RAG tests. Unset skips those tests. |
+| `LANGFUSE_BASE_URL` | _(Langfuse cloud)_ | Base URL of a self-hosted Langfuse. Set only when not using Langfuse cloud. |
+
+> Setting the Langfuse keys also enables LLM tracing (latency, token usage,
+> user feedback) in addition to prompt loading.
 
 ### Run locally
 
