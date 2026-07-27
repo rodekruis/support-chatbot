@@ -53,3 +53,65 @@ def test_validate_citation_markers_ignores_years():
 
     assert cleaned == "Released in [2024] and supported [1]."
 
+
+def test_parse_route_detects_direct():
+    """A 'direct' router reply routes to the no-retrieval branch."""
+    assert LangGraphConversationEngine._parse_route("direct") == "direct"
+    assert LangGraphConversationEngine._parse_route(" Direct.\n") == "direct"
+
+
+def test_parse_route_defaults_to_retrieve():
+    """Anything not clearly 'direct' defaults to retrieval (bias toward retrieve)."""
+    assert LangGraphConversationEngine._parse_route("retrieve") == "retrieve"
+    assert LangGraphConversationEngine._parse_route("") == "retrieve"
+    assert LangGraphConversationEngine._parse_route("unsure, maybe direct") == "retrieve"
+
+
+def test_answer_metadata_gates_context_on_retrieval():
+    """retrieved_context and search_query are exposed only on retrieval turns."""
+    engine = LangGraphConversationEngine.__new__(LangGraphConversationEngine)
+    docs = [Document(page_content="a", metadata={"source": "https://m/a"})]
+
+    retrieved = engine._answer_metadata("retrieve", docs, "how do I import from excel?")
+    assert retrieved["retrieval_used"] is True
+    assert "[1] a" in retrieved["retrieved_context"]
+    assert retrieved["search_query"] == "how do I import from excel?"
+
+    direct = engine._answer_metadata("direct", docs, None)
+    assert direct["retrieval_used"] is False
+    assert "retrieved_context" not in direct
+    assert "search_query" not in direct
+
+
+def test_answer_metadata_history_excludes_current_turn_and_context():
+    """conversation_history holds prior Q&A turns only, without retrieved context."""
+    from types import SimpleNamespace
+
+    engine = LangGraphConversationEngine.__new__(LangGraphConversationEngine)
+    messages = [
+        SimpleNamespace(type="human", content="how do I import from excel?"),
+        SimpleNamespace(type="ai", content="Use the CSV template. [1]"),
+        SimpleNamespace(type="human", content="are you sure?"),
+        SimpleNamespace(type="ai", content="Yes, that's correct."),
+    ]
+
+    metadata = engine._answer_metadata("direct", [], None, messages)
+
+    assert metadata["conversation_history"] == (
+        "user: how do I import from excel?\nassistant: Use the CSV template. [1]"
+    )
+    # the current turn is recorded separately (input/output), not in history
+    assert "are you sure?" not in metadata["conversation_history"]
+
+
+def test_format_history_empty_on_first_turn():
+    """A first turn (only the current exchange) yields empty history."""
+    from types import SimpleNamespace
+
+    messages = [
+        SimpleNamespace(type="human", content="hello"),
+        SimpleNamespace(type="ai", content="Hi there!"),
+    ]
+
+    assert LangGraphConversationEngine._format_history(messages) == ""
+

@@ -117,15 +117,71 @@ accordingly per deployment (`prod` keeps the bare name).
 
 System prompts are loaded at runtime from [Langfuse](https://langfuse.com/)
 prompt management (not from files), so they can be edited and versioned without
-a redeploy. Two text prompts must exist:
+a redeploy. Three text prompts must exist:
 
 - `citations`: product-agnostic; adds inline `[n]` citations to answers.
+- `direct-answer`: product-agnostic; steers conversational / off-topic turns
+  that skip retrieval (greetings, small talk, out-of-scope requests). Appended
+  to the manual's system prompt on the router's `direct` branch.
 - `<manual_id>`: one per manual/product (e.g. `121`); used as that manual's
   system prompt.
+
+Each `<manual_id>` prompt must use the section structure `# Role`, `# Scope`,
+`# Answering`, `# Conversation`. The `direct` branch reuses the manual prompt
+but appends `direct-answer`, which instructs the model to follow `# Role` /
+`# Scope` / `# Conversation` and **ignore `# Answering`** (the document-grounding
+rules, including the "no documents retrieved" canned reply, apply only when
+context is present). Keep these exact headers across manuals, or the override
+silently no-ops.
 
 The prompt version fetched is selected by a Langfuse label derived from
 `ENVIRONMENT`: `prod` maps to the `Production` label; other environments use
 their own name (e.g. `dev`).
+
+### Observability & evaluation
+
+Every question first passes through a **router** step that decides whether it
+needs the manual (`retrieve`) or is a greeting / small talk / off-topic message
+(`direct`). Only the `retrieve` branch runs retrieval; `direct` turns answer
+conversationally with no document lookup (saving latency, cost, and tokens).
+
+On the `retrieve` branch a **contextualize** step rewrites the latest message
+into a standalone question using recent history (history-aware retrieval), so a
+follow-up like "are you sure?" becomes an explicit question. That standalone
+query is used both for retrieval and for evaluation (see below); first turns skip
+the rewrite. The answer itself is still generated from the full conversation.
+
+When the Langfuse keys are set, each `/ask` and `/ask/stream` request is traced
+as a Langfuse root span named **`chat-turn`** (one per request); the router,
+contextualize, retrieval, and LLM steps nest underneath it. The root span
+exposes:
+
+- **input**: the user's latest message, verbatim (plain string).
+- **output**: the final answer.
+- **metadata.`retrieval_used`**: `true` when the router chose retrieval.
+- **metadata.`retrieved_context`**: the numbered `[n] page_content` block
+  exactly as fed to the model; present **only** when `retrieval_used` is `true`
+  (so a faithfulness judge sees the same context the answer was grounded on).
+- **metadata.`search_query`**: the history-aware standalone question used for
+  retrieval; present only when `retrieval_used` is `true`.- **metadata.`conversation_history`**: the prior question/answer turns as a
+  plain transcript (no retrieved context, current turn excluded) — recorded on
+  **every** turn for user-facing judges such as a distress evaluator.
+`retrieved_context` lives on the `chat-turn` span, not on the child `generate` /
+`AzureChatOpenAI` observations. When configuring an observation-level evaluator
+(e.g. Faithfulness or Context Relevance), target the `chat-turn` observation,
+**filter on `metadata.retrieval_used = true`** (so the judge skips chitchat /
+off-topic turns that never retrieved), and map:
+
+- `{{context}}` → **Metadata**, JsonPath `$.retrieved_context`
+- `{{answer}}` → **Output** (no JsonPath)
+- `{{question}}` → **Metadata**, JsonPath `$.search_query` (the standalone
+  question, **not** the raw span input, so multi-turn follow-ups are scored
+  against a self-contained question)
+
+Targeting `chat-turn` (rather than the LLM generation) also ensures the judge
+runs once per answer instead of on every internal LLM call. Traces are tagged
+with `manual:<manual_id>`, carry the request's `session_id`/`user_id`, and are
+namespaced by the `ENVIRONMENT` value (filterable in the Langfuse UI).
 
 ### Run locally
 

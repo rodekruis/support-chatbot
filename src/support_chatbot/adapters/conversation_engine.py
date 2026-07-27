@@ -37,12 +37,34 @@ logger = logging.getLogger(__name__)
 
 _CITATION_MARKER = re.compile(r"\s*\[(\d{1,2})\]")
 
+_ROUTER_INSTRUCTION = (
+    "You route messages for a product support assistant. Decide whether "
+    "answering the user's latest message requires the product manual.\n"
+    "Reply with exactly one word:\n"
+    "- retrieve: a substantive product question (how-to, features, permissions, "
+    "troubleshooting, configuration).\n"
+    "- direct: a greeting, small talk, thanks, or an off-topic / general-"
+    "knowledge request the manual would not help with.\n"
+    "When in doubt, reply retrieve."
+)
+
+_CONTEXTUALIZE_INSTRUCTION = (
+    "Given the conversation so far and the user's latest message, rewrite the "
+    "latest message into a standalone question that can be understood without "
+    "the chat history. Resolve references and pronouns (e.g. 'are you sure?', "
+    "'and then?', 'what about export?') into an explicit question. If the latest "
+    "message is already self-contained, return it unchanged. Do NOT answer it, "
+    "output only the reformulated question."
+)
+
 
 class ChatState(MessagesState):
     """State stored in the LangGraph conversation graph."""
 
     system_prompt: str
     retrieved_docs: list
+    route: str
+    search_query: str
 
 
 class LangGraphConversationEngine(ConversationEngine):
@@ -70,6 +92,7 @@ class LangGraphConversationEngine(ConversationEngine):
             if settings.citations_enabled
             else ""
         )
+        self._direct_answer_prompt = prompt_provider.get_direct_answer_prompt()
         self._langfuse = self._init_langfuse(settings)
         self._graph = self._build_graph()
 
@@ -92,10 +115,40 @@ class LangGraphConversationEngine(ConversationEngine):
         )
 
     def _build_graph(self):
+        def router(state: ChatState):
+            """Decide whether the turn needs manual retrieval."""
+            return {"route": self._classify_route(state["messages"])}
+
+        def contextualize(state: ChatState):
+            """Rewrite a follow-up into a standalone retrieval query using history.
+
+            History-aware retrieval: turns like "are you sure?" become an
+            explicit question so both retrieval and the evaluator's
+            ``{{question}}`` see a self-contained query. First turns (no prior
+            history) skip the LLM call and use the message as-is.
+            """
+            conversation = [
+                message
+                for message in state["messages"]
+                if message.type in ("human", "ai")
+            ]
+            latest = conversation[-1].content if conversation else ""
+            if len(conversation) <= 1:
+                return {"search_query": latest}
+            prompt = [SystemMessage(_CONTEXTUALIZE_INSTRUCTION), *conversation]
+            try:
+                result = self._llm.invoke(prompt)
+            except OpenAIError as exc:
+                raise ExternalServiceError(
+                    f"Query contextualization failed: {exc}"
+                ) from exc
+            rewritten = (getattr(result, "content", "") or "").strip()
+            return {"search_query": rewritten or latest}
+
         def retrieve(state: ChatState, config: RunnableConfig):
             """Fetch and de-duplicate the manual pages backing the question.
             """
-            question = state["messages"][-1].content
+            question = state.get("search_query") or state["messages"][-1].content
             manual_id = config["configurable"]["manual_id"]
             vector_store = self._provider.get_store(manual_id)
             retrieved = vector_store.similarity_search_with_score(
@@ -143,12 +196,36 @@ class LangGraphConversationEngine(ConversationEngine):
                     response = AIMessage(content=cleaned, id=response.id)
             return {"messages": [response]}
 
+        def direct_answer(state: ChatState):
+            """Answer conversational/off-topic turns without retrieval."""
+            conversation_messages = [
+                message
+                for message in state["messages"]
+                if message.type in ("human", "ai")
+            ]
+            system_prompt = "\n\n".join(
+                [state["system_prompt"], self._direct_answer_prompt]
+            )
+            prompt = [SystemMessage(system_prompt)] + conversation_messages
+            response = self._llm.invoke(prompt)
+            return {"messages": [response]}
+
         graph_builder = StateGraph(ChatState)
+        graph_builder.add_node(router)
+        graph_builder.add_node(contextualize)
         graph_builder.add_node(retrieve)
         graph_builder.add_node(generate)
-        graph_builder.set_entry_point("retrieve")
+        graph_builder.add_node(direct_answer)
+        graph_builder.set_entry_point("router")
+        graph_builder.add_conditional_edges(
+            "router",
+            lambda state: state["route"],
+            {"retrieve": "contextualize", "direct": "direct_answer"},
+        )
+        graph_builder.add_edge("contextualize", "retrieve")
         graph_builder.add_edge("retrieve", "generate")
         graph_builder.add_edge("generate", END)
+        graph_builder.add_edge("direct_answer", END)
 
         return graph_builder.compile(checkpointer=MemorySaver())
 
@@ -174,18 +251,15 @@ class LangGraphConversationEngine(ConversationEngine):
             )
 
         # Wrap the run in a Langfuse root span that records the question, the
-        # final answer, and the retrieved context as separate, cleanly mappable
-        # fields. An LLM-as-a-judge evaluator (e.g. faithfulness) can then target
-        # this observation and map {{context}} -> metadata.retrieved_context and
-        # {{answer}} -> output without parsing them out of the generation prompt.
-        with self._langfuse.start_as_current_observation(
-            as_type="span", name="rag-answer", input={"question": question}
+        # final answer, and (when retrieval ran) the retrieved context as
+        # separate, cleanly mappable fields. Evaluators (faithfulness, context
+        # relevance) target this observation and filter on ``retrieval_used`` so
+        # they never run on chitchat / off-topic turns.
+        with self._trace_attributes(
+            session_id, user_id, manual_id
+        ), self._langfuse.start_as_current_observation(
+            as_type="span", name="chat-turn", input=question
         ) as root:
-            root.update_trace(
-                session_id=session_id,
-                user_id=user_id or session_id,
-                tags=[f"manual:{manual_id}"],
-            )
             response = self._invoke_graph(
                 question, system_prompt, session_id, manual_id
             )
@@ -193,7 +267,12 @@ class LangGraphConversationEngine(ConversationEngine):
             answer_text = response["messages"][-1].content
             root.update(
                 output=answer_text,
-                metadata={"retrieved_context": self._format_context(docs)},
+                metadata=self._answer_metadata(
+                    response.get("route"),
+                    docs,
+                    response.get("search_query"),
+                    response.get("messages"),
+                ),
             )
             trace_id = root.trace_id
         return AskResponse(
@@ -218,7 +297,7 @@ class LangGraphConversationEngine(ConversationEngine):
         event carries the same trace id and sources as :meth:`answer`.
         """
         if self._langfuse is None:
-            docs, _ = yield from self._iter_answer_tokens(
+            _, _, docs, _, _ = yield from self._iter_answer_tokens(
                 question, system_prompt, session_id, manual_id
             )
             yield AnswerComplete(
@@ -226,20 +305,21 @@ class LangGraphConversationEngine(ConversationEngine):
             )
             return
 
-        with self._langfuse.start_as_current_observation(
-            as_type="span", name="rag-answer", input={"question": question}
+        with self._trace_attributes(
+            session_id, user_id, manual_id
+        ), self._langfuse.start_as_current_observation(
+            as_type="span", name="chat-turn", input=question
         ) as root:
-            root.update_trace(
-                session_id=session_id,
-                user_id=user_id or session_id,
-                tags=[f"manual:{manual_id}"],
-            )
-            docs, answer_text = yield from self._iter_answer_tokens(
-                question, system_prompt, session_id, manual_id
+            route, search_query, docs, messages, answer_text = yield from (
+                self._iter_answer_tokens(
+                    question, system_prompt, session_id, manual_id
+                )
             )
             root.update(
                 output=answer_text,
-                metadata={"retrieved_context": self._format_context(docs)},
+                metadata=self._answer_metadata(
+                    route, docs, search_query, messages
+                ),
             )
             trace_id = root.trace_id
             sources = self._extract_sources(docs)
@@ -251,12 +331,15 @@ class LangGraphConversationEngine(ConversationEngine):
         system_prompt: str,
         session_id: str,
         manual_id: str,
-    ) -> Generator[AnswerToken, None, tuple[list, str]]:
-        """Stream answer tokens, returning ``(docs, answer_text)`` when done.
+    ) -> Generator[
+        AnswerToken, None, tuple[str | None, str | None, list, list, str]
+    ]:
+        """Stream tokens; return ``(route, search_query, docs, messages, answer_text)``.
 
-        Any Langfuse callback spans created while the graph streams nest under
-        the currently active observation (the ``rag-answer`` root span when
-        tracing is enabled).
+        Tokens from both the ``generate`` and ``direct_answer`` nodes are
+        surfaced; router and contextualize tokens are filtered out. Any Langfuse
+        callback spans created while the graph streams nest under the currently
+        active observation (the ``chat-turn`` root span when tracing is enabled).
         """
         config = self._graph_config(session_id, manual_id)
         inputs = {
@@ -268,7 +351,7 @@ class LangGraphConversationEngine(ConversationEngine):
             for chunk, metadata in self._graph.stream(
                 inputs, config=config, stream_mode="messages"
             ):
-                if metadata.get("langgraph_node") != "generate":
+                if metadata.get("langgraph_node") not in ("generate", "direct_answer"):
                     continue
                 content = getattr(chunk, "content", "")
                 if isinstance(content, str) and content:
@@ -280,7 +363,10 @@ class LangGraphConversationEngine(ConversationEngine):
             ) from exc
         state = self._graph.get_state(config)
         docs = state.values.get("retrieved_docs") or []
-        return docs, "".join(parts)
+        route = state.values.get("route")
+        search_query = state.values.get("search_query")
+        messages = state.values.get("messages") or []
+        return route, search_query, docs, messages, "".join(parts)
 
     def _invoke_graph(
         self,
@@ -314,6 +400,89 @@ class LangGraphConversationEngine(ConversationEngine):
 
             config["callbacks"] = [CallbackHandler()]
         return config
+
+    def _classify_route(self, messages: list) -> str:
+        """Classify whether the latest turn needs retrieval ('retrieve'/'direct').
+
+        Considers recent history so short follow-ups (e.g. "and then?") still
+        route to retrieval. Biased toward 'retrieve' on any ambiguity \u2014 a
+        missed retrieval hurts more than a wasted one.
+        """
+        recent = [m for m in messages if m.type in ("human", "ai")][-6:]
+        prompt = [SystemMessage(_ROUTER_INSTRUCTION), *recent]
+        try:
+            result = self._llm.invoke(prompt)
+        except OpenAIError as exc:
+            raise ExternalServiceError(f"Routing failed: {exc}") from exc
+        return self._parse_route(getattr(result, "content", ""))
+
+    @staticmethod
+    def _parse_route(text: str) -> str:
+        """Map a router reply to 'direct', defaulting to 'retrieve'."""
+        return (
+            "direct"
+            if str(text).strip().lower().startswith("direct")
+            else "retrieve"
+        )
+
+    def _answer_metadata(
+        self,
+        route: str | None,
+        docs: list,
+        search_query: str | None = None,
+        messages: list | None = None,
+    ) -> dict:
+        """Build span metadata; expose retrieved context only when retrieval ran.
+
+        ``retrieval_used`` gates the RAG evaluators (context-relevance,
+        faithfulness) so they never run on chitchat / off-topic turns.
+        ``search_query`` is the history-aware standalone question used for
+        retrieval; evaluators map ``{{question}}`` to it so follow-ups are scored
+        against a self-contained question rather than the bare latest message.
+        ``conversation_history`` (prior question/answer turns only, no retrieved
+        context) is recorded on every turn for user-facing judges such as a
+        distress evaluator.
+        """
+        retrieval_used = route == "retrieve"
+        metadata: dict = {"retrieval_used": retrieval_used}
+        if messages is not None:
+            metadata["conversation_history"] = self._format_history(messages)
+        if retrieval_used:
+            metadata["retrieved_context"] = self._format_context(docs)
+            if search_query:
+                metadata["search_query"] = search_query
+        return metadata
+
+    @staticmethod
+    def _format_history(messages: list) -> str:
+        """Render prior question/answer turns as a plain transcript.
+
+        Excludes the current turn (its user message is the span input and its
+        answer the span output) and never includes retrieved context, only
+        the human/assistant exchange.
+        """
+        turns = [
+            message
+            for message in messages
+            if getattr(message, "type", None) in ("human", "ai")
+        ]
+        role = {"human": "user", "ai": "assistant"}
+        prior = turns[:-2]
+        return "\n".join(
+            f"{role.get(message.type, message.type)}: {message.content}"
+            for message in prior
+        )
+
+    @staticmethod
+    def _trace_attributes(session_id: str, user_id: str | None, manual_id: str):
+        """Propagate session/user/tags onto the trace and its child observations."""
+        from langfuse import propagate_attributes
+
+        return propagate_attributes(
+            session_id=session_id,
+            user_id=user_id or session_id,
+            tags=[f"manual:{manual_id}"],
+        )
 
     @staticmethod
     def _format_context(docs: list) -> str:

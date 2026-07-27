@@ -87,6 +87,10 @@ class PromptProvider(Protocol):
         """Return the product-agnostic prompt used to add inline citations."""
         ...
 
+    def get_direct_answer_prompt(self) -> str:
+        """Return the product-agnostic prompt for conversational/off-topic turns."""
+        ...
+
 
 @runtime_checkable
 class ConversationEngine(Protocol):

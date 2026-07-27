@@ -2,9 +2,11 @@
 
 Loads system prompts from Langfuse prompt management instead of packaged files,
 so prompt text can be edited and versioned in Langfuse and picked up without a
-redeploy. Two kinds of prompts are used:
+redeploy. Three kinds of prompts are used:
 
-- ``citations``: product-agnostic, always used to add inline citations.
+- ``citations``: product-agnostic, adds inline citations to grounded answers.
+- ``direct-answer``: product-agnostic, steers conversational / off-topic turns
+  that skip retrieval (greetings, small talk, out-of-scope requests).
 - ``<product>``: product-specific (named after the manual/product id, e.g.
   ``121``), used as the system prompt for that product's answers.
 
@@ -20,6 +22,7 @@ from support_chatbot.domain.ports import PromptProvider
 from support_chatbot.settings import AppSettings
 
 _CITATION_PROMPT_NAME = "citations"
+_DIRECT_ANSWER_PROMPT_NAME = "direct-answer"
 
 
 class LangfusePromptProvider(PromptProvider):
@@ -53,6 +56,10 @@ class LangfusePromptProvider(PromptProvider):
     def get_citation_prompt(self) -> str:
         """Return the product-agnostic citation prompt."""
         return self._fetch(_CITATION_PROMPT_NAME)
+
+    def get_direct_answer_prompt(self) -> str:
+        """Return the product-agnostic conversational/off-topic prompt."""
+        return self._fetch(_DIRECT_ANSWER_PROMPT_NAME)
 
     def _fetch(self, name: str) -> str:
         try:
