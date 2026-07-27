@@ -4,7 +4,7 @@ Provides level-1 support for 510's products and services.
  
 ## Description
 
-Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) / [langgraph](https://github.com/langchain-ai/langgraph) and Azure OpenAI models. Uses [uv](https://docs.astral.sh/uv/) for dependency management.
+Synopsis: a [dockerized](https://www.docker.com/) [python](https://www.python.org/) API that serves a chatbot. Based on [langchain](https://github.com/langchain-ai/langchain) / [langgraph](https://github.com/langchain-ai/langgraph) and Azure OpenAI models. Observability and evaluations through [Langfuse](https://langfuse.com/). Uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ### Manuals
 
@@ -73,7 +73,7 @@ accordingly per deployment (`prod` keeps the bare name).
 
 ### Prompts
 
-System prompts are loaded at runtime from [Langfuse](https://langfuse.com/)
+System prompts are loaded at runtime from Langfuse
 prompt management (not from files), so they can be edited and versioned without
 a redeploy. Three text prompts must exist:
 
