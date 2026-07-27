@@ -292,8 +292,9 @@ class LangGraphConversationEngine(ConversationEngine):
     ) -> Iterator[AnswerToken | AnswerComplete]:
         """Stream the answer token-by-token, then a final AnswerComplete event.
 
-        Only tokens from the ``generate`` node are surfaced. Sources are read
-        from the final graph state once generation finishes, so the terminal
+        Tokens from the ``generate`` and ``direct_answer`` nodes are surfaced
+        (the ``router`` and ``contextualize`` steps stay silent). Sources are
+        read from the final graph state once answering finishes, so the terminal
         event carries the same trace id and sources as :meth:`answer`.
         """
         if self._langfuse is None:
