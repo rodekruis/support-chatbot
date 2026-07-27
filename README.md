@@ -199,7 +199,8 @@ uv run streamlit run interface/app.py
 ### Run with Docker
 
 ```sh
-docker compose up --detach
+docker build -t support-chatbot .
+docker run --env-file .env -p 8000:8000 support-chatbot
 ```
 
 ### Run tests
