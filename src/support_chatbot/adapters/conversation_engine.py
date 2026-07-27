@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -121,10 +121,7 @@ class LangGraphConversationEngine(ConversationEngine):
             sources returned to the client.
             """
             docs = state.get("retrieved_docs") or []
-            numbered_docs = "\n\n".join(
-                f"[{index}] {doc.page_content}"
-                for index, doc in enumerate(docs, start=1)
-            )
+            numbered_docs = self._format_context(docs)
             system_parts = [
                 state["system_prompt"],
                 f"Context documents:\n{numbered_docs}",
@@ -165,23 +162,44 @@ class LangGraphConversationEngine(ConversationEngine):
         user_id: str | None = None,
     ) -> AskResponse:
         """Return the assistant's reply (with an optional trace id) for a question."""
-        config, trace_id = self._build_run_config(session_id, manual_id, user_id)
-        try:
-            response = self._graph.invoke(
-                {
-                    "messages": [{"role": "user", "content": question}],
-                    "system_prompt": system_prompt,
-                },
-                config=config,
+        if self._langfuse is None:
+            response = self._invoke_graph(
+                question, system_prompt, session_id, manual_id
             )
-        except OpenAIError as exc:
-            raise ExternalServiceError(
-                f"Chat completion failed for manual {manual_id!r}: {exc}"
-            ) from exc
+            docs = response.get("retrieved_docs") or []
+            return AskResponse(
+                answer=response["messages"][-1].content,
+                trace_id=None,
+                sources=self._extract_sources(docs),
+            )
+
+        # Wrap the run in a Langfuse root span that records the question, the
+        # final answer, and the retrieved context as separate, cleanly mappable
+        # fields. An LLM-as-a-judge evaluator (e.g. faithfulness) can then target
+        # this observation and map {{context}} -> metadata.retrieved_context and
+        # {{answer}} -> output without parsing them out of the generation prompt.
+        with self._langfuse.start_as_current_observation(
+            as_type="span", name="rag-answer", input={"question": question}
+        ) as root:
+            root.update_trace(
+                session_id=session_id,
+                user_id=user_id or session_id,
+                tags=[f"manual:{manual_id}"],
+            )
+            response = self._invoke_graph(
+                question, system_prompt, session_id, manual_id
+            )
+            docs = response.get("retrieved_docs") or []
+            answer_text = response["messages"][-1].content
+            root.update(
+                output=answer_text,
+                metadata={"retrieved_context": self._format_context(docs)},
+            )
+            trace_id = root.trace_id
         return AskResponse(
-            answer=response["messages"][-1].content,
+            answer=answer_text,
             trace_id=trace_id,
-            sources=self._extract_sources(response.get("retrieved_docs") or []),
+            sources=self._extract_sources(docs),
         )
 
     def stream(
@@ -199,11 +217,53 @@ class LangGraphConversationEngine(ConversationEngine):
         from the final graph state once generation finishes, so the terminal
         event carries the same trace id and sources as :meth:`answer`.
         """
-        config, trace_id = self._build_run_config(session_id, manual_id, user_id)
+        if self._langfuse is None:
+            docs, _ = yield from self._iter_answer_tokens(
+                question, system_prompt, session_id, manual_id
+            )
+            yield AnswerComplete(
+                trace_id=None, sources=self._extract_sources(docs)
+            )
+            return
+
+        with self._langfuse.start_as_current_observation(
+            as_type="span", name="rag-answer", input={"question": question}
+        ) as root:
+            root.update_trace(
+                session_id=session_id,
+                user_id=user_id or session_id,
+                tags=[f"manual:{manual_id}"],
+            )
+            docs, answer_text = yield from self._iter_answer_tokens(
+                question, system_prompt, session_id, manual_id
+            )
+            root.update(
+                output=answer_text,
+                metadata={"retrieved_context": self._format_context(docs)},
+            )
+            trace_id = root.trace_id
+            sources = self._extract_sources(docs)
+        yield AnswerComplete(trace_id=trace_id, sources=sources)
+
+    def _iter_answer_tokens(
+        self,
+        question: str,
+        system_prompt: str,
+        session_id: str,
+        manual_id: str,
+    ) -> Generator[AnswerToken, None, tuple[list, str]]:
+        """Stream answer tokens, returning ``(docs, answer_text)`` when done.
+
+        Any Langfuse callback spans created while the graph streams nest under
+        the currently active observation (the ``rag-answer`` root span when
+        tracing is enabled).
+        """
+        config = self._graph_config(session_id, manual_id)
         inputs = {
             "messages": [{"role": "user", "content": question}],
             "system_prompt": system_prompt,
         }
+        parts: list[str] = []
         try:
             for chunk, metadata in self._graph.stream(
                 inputs, config=config, stream_mode="messages"
@@ -212,36 +272,61 @@ class LangGraphConversationEngine(ConversationEngine):
                     continue
                 content = getattr(chunk, "content", "")
                 if isinstance(content, str) and content:
+                    parts.append(content)
                     yield AnswerToken(text=content)
         except OpenAIError as exc:
             raise ExternalServiceError(
                 f"Chat completion failed for manual {manual_id!r}: {exc}"
             ) from exc
         state = self._graph.get_state(config)
-        sources = self._extract_sources(state.values.get("retrieved_docs") or [])
-        yield AnswerComplete(trace_id=trace_id, sources=sources)
+        docs = state.values.get("retrieved_docs") or []
+        return docs, "".join(parts)
 
-    def _build_run_config(
-        self, session_id: str, manual_id: str, user_id: str | None
-    ) -> tuple[dict, str | None]:
-        """Build the LangGraph run config and (optional) Langfuse trace id."""
+    def _invoke_graph(
+        self,
+        question: str,
+        system_prompt: str,
+        session_id: str,
+        manual_id: str,
+    ) -> dict:
+        """Invoke the retrieval graph, translating LLM errors to domain errors."""
+        config = self._graph_config(session_id, manual_id)
+        try:
+            return self._graph.invoke(
+                {
+                    "messages": [{"role": "user", "content": question}],
+                    "system_prompt": system_prompt,
+                },
+                config=config,
+            )
+        except OpenAIError as exc:
+            raise ExternalServiceError(
+                f"Chat completion failed for manual {manual_id!r}: {exc}"
+            ) from exc
+
+    def _graph_config(self, session_id: str, manual_id: str) -> dict:
+        """Build the LangGraph run config, nesting tracing under the active span."""
         config: dict = {
             "configurable": {"thread_id": session_id, "manual_id": manual_id}
         }
-        trace_id: str | None = None
         if self._langfuse is not None:
             from langfuse.langchain import CallbackHandler
 
-            trace_id = self._langfuse.create_trace_id()
-            config["callbacks"] = [
-                CallbackHandler(trace_context={"trace_id": trace_id})
-            ]
-            config["metadata"] = {
-                "langfuse_session_id": session_id,
-                "langfuse_user_id": user_id or session_id,
-                "langfuse_tags": [f"manual:{manual_id}"],
-            }
-        return config, trace_id
+            config["callbacks"] = [CallbackHandler()]
+        return config
+
+    @staticmethod
+    def _format_context(docs: list) -> str:
+        """Render retrieved docs as the numbered ``[n] page_content`` block.
+
+        Matches exactly what the ``generate`` node feeds the model, so an
+        evaluator scoring faithfulness sees the same context the answer was
+        grounded on.
+        """
+        return "\n\n".join(
+            f"[{index}] {getattr(doc, 'page_content', '')}"
+            for index, doc in enumerate(docs, start=1)
+        )
 
     @staticmethod
     def _extract_sources(docs: list) -> tuple[Source, ...]:
