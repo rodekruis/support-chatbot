@@ -1,78 +1,37 @@
 """Unit tests for the conversation engine source extraction."""
 
-from types import SimpleNamespace
-
-from openai import OpenAIError
-
 from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
 from support_chatbot.domain.models import Document
 
 
-def _tool_message(docs: list[Document]) -> SimpleNamespace:
-    return SimpleNamespace(type="tool", artifact=docs)
-
-
-def _ai_message() -> SimpleNamespace:
-    return SimpleNamespace(type="ai", artifact=None)
-
-
-def _human_message() -> SimpleNamespace:
-    return SimpleNamespace(type="human", artifact=None)
-
-
-def test_extract_sources_returns_current_turn_pages_in_rank_order():
-    """Collect retrieved pages from the latest turn, preserving rank."""
+def test_extract_sources_returns_pages_in_rank_order():
+    """Map retrieved docs to sources, preserving rank and scores."""
     docs = [
         Document(page_content="a", metadata={"source": "https://m/a", "score": 0.9}),
         Document(page_content="b", metadata={"source": "https://m/b", "score": 0.5}),
     ]
-    messages = [
-        _human_message(),
-        _ai_message(),
-        _tool_message(docs),
-        _ai_message(),
-    ]
 
-    sources = LangGraphConversationEngine._extract_sources(messages)
+    sources = LangGraphConversationEngine._extract_sources(docs)
 
     assert [s.url for s in sources] == ["https://m/a", "https://m/b"]
     assert [s.score for s in sources] == [0.9, 0.5]
 
 
-def test_extract_sources_deduplicates_by_url():
-    """Drop duplicate pages, keeping the first occurrence."""
+def test_extract_sources_skips_docs_without_url():
+    """Drop retrieved docs that have no source URL."""
     docs = [
         Document(page_content="a", metadata={"source": "https://m/a"}),
-        Document(page_content="a2", metadata={"source": "https://m/a"}),
+        Document(page_content="b", metadata={}),
     ]
-    sources = LangGraphConversationEngine._extract_sources([_tool_message(docs)])
+
+    sources = LangGraphConversationEngine._extract_sources(docs)
 
     assert [s.url for s in sources] == ["https://m/a"]
 
 
-def test_extract_sources_ignores_previous_turns():
-    """Only the final contiguous tool block contributes sources."""
-    old = [Document(page_content="old", metadata={"source": "https://m/old"})]
-    new = [Document(page_content="new", metadata={"source": "https://m/new"})]
-    messages = [
-        _tool_message(old),
-        _ai_message(),
-        _human_message(),
-        _ai_message(),
-        _tool_message(new),
-        _ai_message(),
-    ]
-
-    sources = LangGraphConversationEngine._extract_sources(messages)
-
-    assert [s.url for s in sources] == ["https://m/new"]
-
-
-def test_extract_sources_empty_without_tool_messages():
-    """Return no sources when the turn used no retrieval."""
-    messages = [_human_message(), _ai_message()]
-
-    assert LangGraphConversationEngine._extract_sources(messages) == ()
+def test_extract_sources_empty_without_docs():
+    """Return no sources when nothing was retrieved."""
+    assert LangGraphConversationEngine._extract_sources([]) == ()
 
 
 def test_validate_citation_markers_drops_out_of_range():
@@ -95,50 +54,64 @@ def test_validate_citation_markers_ignores_years():
     assert cleaned == "Released in [2024] and supported [1]."
 
 
-def test_strip_markers_removes_markers_and_normalizes_whitespace():
-    """Stripping markers yields the bare normalized text."""
-    assert (
-        LangGraphConversationEngine._strip_markers("A claim [1] here [2].")
-        == "A claim here."
+def test_parse_route_detects_direct():
+    """A 'direct' router reply routes to the no-retrieval branch."""
+    assert LangGraphConversationEngine._parse_route("direct") == "direct"
+    assert LangGraphConversationEngine._parse_route(" Direct.\n") == "direct"
+
+
+def test_parse_route_defaults_to_retrieve():
+    """Anything not clearly 'direct' defaults to retrieval (bias toward retrieve)."""
+    assert LangGraphConversationEngine._parse_route("retrieve") == "retrieve"
+    assert LangGraphConversationEngine._parse_route("") == "retrieve"
+    assert LangGraphConversationEngine._parse_route("unsure, maybe direct") == "retrieve"
+
+
+def test_answer_metadata_gates_context_on_retrieval():
+    """retrieved_context and search_query are exposed only on retrieval turns."""
+    engine = LangGraphConversationEngine.__new__(LangGraphConversationEngine)
+    docs = [Document(page_content="a", metadata={"source": "https://m/a"})]
+
+    retrieved = engine._answer_metadata("retrieve", docs, "how do I import from excel?")
+    assert retrieved["retrieval_used"] is True
+    assert "[1] a" in retrieved["retrieved_context"]
+    assert retrieved["search_query"] == "how do I import from excel?"
+
+    direct = engine._answer_metadata("direct", docs, None)
+    assert direct["retrieval_used"] is False
+    assert "retrieved_context" not in direct
+    assert "search_query" not in direct
+
+
+def test_answer_metadata_history_excludes_current_turn_and_context():
+    """conversation_history holds prior Q&A turns only, without retrieved context."""
+    from types import SimpleNamespace
+
+    engine = LangGraphConversationEngine.__new__(LangGraphConversationEngine)
+    messages = [
+        SimpleNamespace(type="human", content="how do I import from excel?"),
+        SimpleNamespace(type="ai", content="Use the CSV template. [1]"),
+        SimpleNamespace(type="human", content="are you sure?"),
+        SimpleNamespace(type="ai", content="Yes, that's correct."),
+    ]
+
+    metadata = engine._answer_metadata("direct", [], None, messages)
+
+    assert metadata["conversation_history"] == (
+        "user: how do I import from excel?\nassistant: Use the CSV template. [1]"
     )
+    # the current turn is recorded separately (input/output), not in history
+    assert "are you sure?" not in metadata["conversation_history"]
 
 
-def _engine_with_fake_llm(reply: str | Exception) -> LangGraphConversationEngine:
-    """Build an engine instance with a stubbed LLM, bypassing __init__."""
-    engine = object.__new__(LangGraphConversationEngine)
-    engine._citation_prompt = "cite"
+def test_format_history_empty_on_first_turn():
+    """A first turn (only the current exchange) yields empty history."""
+    from types import SimpleNamespace
 
-    class _FakeLLM:
-        def invoke(self, _messages):
-            if isinstance(reply, Exception):
-                raise reply
-            return SimpleNamespace(content=reply)
+    messages = [
+        SimpleNamespace(type="human", content="hello"),
+        SimpleNamespace(type="ai", content="Hi there!"),
+    ]
 
-    engine._llm = _FakeLLM()
-    return engine
+    assert LangGraphConversationEngine._format_history(messages) == ""
 
-
-def test_add_citations_inserts_valid_markers():
-    """Return the annotated answer when the model only inserts markers."""
-    engine = _engine_with_fake_llm("The sky is blue [1].")
-    docs = [Document(page_content="sky info", metadata={"source": "https://m/a"})]
-
-    result = engine._add_citations("The sky is blue.", docs)
-
-    assert result == "The sky is blue [1]."
-
-
-def test_add_citations_falls_back_when_wording_changes():
-    """Discard a citation response that reworded the answer."""
-    engine = _engine_with_fake_llm("Here is the answer: the sky is blue [1].")
-    docs = [Document(page_content="sky info", metadata={"source": "https://m/a"})]
-
-    assert engine._add_citations("The sky is blue.", docs) is None
-
-
-def test_add_citations_falls_back_on_llm_error():
-    """Fail open to the plain answer when the citation call raises."""
-    engine = _engine_with_fake_llm(OpenAIError("boom"))
-    docs = [Document(page_content="sky info", metadata={"source": "https://m/a"})]
-
-    assert engine._add_citations("The sky is blue.", docs) is None

@@ -11,6 +11,19 @@ class QuestionRequest(BaseModel):
         min_length=1,
         description="Id of the manual to answer from.",
     )
+    session_id: str | None = Field(
+        default=None,
+        description=(
+            "Optional client-generated conversation id. Groups a user's turns "
+            "into one thread (conversation memory) and is used as the Langfuse "
+            "session id. When omitted, the request is treated as a fresh, "
+            "stateless conversation."
+        ),
+    )
+    user_id: str | None = Field(
+        default=None,
+        description="Optional id of the end user, forwarded to Langfuse tracing.",
+    )
 
 
 class Source(BaseModel):

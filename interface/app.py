@@ -1,4 +1,7 @@
+import json
+import os
 import re
+import uuid
 
 import requests
 import streamlit as st
@@ -12,16 +15,18 @@ API_BASE_URLS = {
     "dev": "https://support-chatbot-dev.azurewebsites.net",
 }
 
+environment = os.getenv("ENVIRONMENT", "dev")
+if environment not in API_BASE_URLS:
+    raise ValueError(
+        f"Unknown ENVIRONMENT {environment!r}; expected one of {sorted(API_BASE_URLS)}."
+    )
+API_BASE_URL = API_BASE_URLS[environment]
+
 with st.sidebar:
     api_key = st.text_input(
         "support-chatbot API Key", key="chatbot_api_key", type="password"
     )
     manual_id = st.text_input("Manual", key="manual_id", value="121")
-    environment = st.selectbox(
-        "Environment", ("prod", "dev"), key="environment", index=1
-    )
-
-API_BASE_URL = API_BASE_URLS[environment]
 
 
 def send_feedback(trace_id: str, positive: bool) -> None:
@@ -39,6 +44,11 @@ def send_feedback(trace_id: str, positive: bool) -> None:
 
 st.title("support-chatbot")
 st.caption("Ask questions about 510's products and services.")
+
+# One conversation id per browser session, so a user's turns share memory
+# without colliding with other users.
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -71,20 +81,6 @@ def linkify_citations(text: str, sources: list[dict]) -> str:
     return re.sub(r"\[(\d{1,2})\]", _replace, text)
 
 
-def render_sources(sources: list[dict]) -> None:
-    """Render the manual pages that backed an answer as clickable links."""
-    if not sources:
-        return
-    lines = ["**Sources**"]
-    for source in sources:
-        url = source.get("url")
-        if not url:
-            continue
-        label = source.get("title") or url
-        lines.append(f"- [{label}]({url})")
-    st.markdown("\n".join(lines))
-
-
 # Display chat messages from history on app rerun
 for index, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
@@ -92,7 +88,6 @@ for index, message in enumerate(st.session_state.messages):
             st.markdown(
                 linkify_citations(message["content"], message.get("sources", []))
             )
-            render_sources(message.get("sources", []))
             if message.get("trace_id"):
                 render_feedback(index, message["trace_id"])
         else:
@@ -109,26 +104,44 @@ if prompt := st.chat_input():
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # make a POST request to chat API
-    answer = requests.post(
-        f"{API_BASE_URL}/ask",
-        headers={"Authorization": api_key},
-        json={"question": prompt, "manual_id": manual_id},
-    )
-
+    # stream the answer from the chat API, rendering tokens as they arrive
     trace_id = None
     sources = []
-    if answer.status_code != 200:
-        response = f"Request failed: {answer.status_code}"
-    else:
-        body = answer.json()
-        response = body["answer"]
-        trace_id = body.get("trace_id")
-        sources = body.get("sources", [])
-    # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        st.markdown(linkify_citations(response, sources))
-        render_sources(sources)
+        placeholder = st.empty()
+        accumulated = ""
+        try:
+            with requests.post(
+                f"{API_BASE_URL}/ask/stream",
+                headers={"Authorization": api_key},
+                json={
+                    "question": prompt,
+                    "manual_id": manual_id,
+                    "session_id": st.session_state.session_id,
+                },
+                stream=True,
+                timeout=120,
+            ) as stream:
+                if stream.status_code != 200:
+                    accumulated = f"Request failed: {stream.status_code}"
+                else:
+                    for line in stream.iter_lines():
+                        if not line:
+                            continue
+                        event = json.loads(line)
+                        if event["type"] == "token":
+                            accumulated += event["text"]
+                            placeholder.markdown(accumulated + "▌")
+                        elif event["type"] == "done":
+                            trace_id = event.get("trace_id")
+                            sources = event.get("sources", [])
+                        elif event["type"] == "error":
+                            accumulated += "\n\n_Sorry, something went wrong._"
+        except requests.RequestException as exc:
+            accumulated = f"Request failed: {exc}"
+        # final render with citations turned into links
+        placeholder.markdown(linkify_citations(accumulated, sources))
+    response = accumulated
     # Add assistant response to chat history
     st.session_state.messages.append(
         {

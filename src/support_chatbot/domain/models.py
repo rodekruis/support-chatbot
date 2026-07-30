@@ -16,7 +16,6 @@ class ManualConfig:
     exclude_dirs: tuple[str, ...]
     chunk_size: int | None = None
     chunk_overlap: int | None = None
-    prompt_file: str | None = None
     strip_boilerplate: bool = True
     boilerplate_threshold: float = 0.9
 
@@ -34,8 +33,9 @@ class AskRequest:
     """Input for asking the chatbot a question about a manual."""
 
     question: str
-    thread_id: str
+    session_id: str
     manual_id: str
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +52,21 @@ class AskResponse:
     """Result of answering a chatbot question."""
 
     answer: str
+    trace_id: str | None = None
+    sources: tuple[Source, ...] = ()
+
+
+@dataclass(frozen=True)
+class AnswerToken:
+    """A streamed fragment of the assistant's answer text."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class AnswerComplete:
+    """Terminal streaming event carrying the trace id and backing sources."""
+
     trace_id: str | None = None
     sources: tuple[Source, ...] = ()
 

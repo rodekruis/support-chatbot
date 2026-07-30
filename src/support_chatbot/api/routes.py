@@ -1,7 +1,11 @@
 """FastAPI routes for chat, admin, and health endpoints."""
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+import json
+import logging
+import uuid
+
+from fastapi import APIRouter, Depends
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 from support_chatbot.api.dependencies import (
     get_chat_service,
@@ -20,6 +24,8 @@ from support_chatbot.api.schemas import (
     Source,
 )
 from support_chatbot.domain.models import (
+    AnswerComplete,
+    AnswerToken,
     AskRequest,
     IngestManualRequest,
 )
@@ -27,6 +33,8 @@ from support_chatbot.domain.models import (
     FeedbackRequest as FeedbackCommand,
 )
 from support_chatbot.settings import AppSettings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -40,17 +48,17 @@ async def docs_redirect() -> RedirectResponse:
 @router.post("/ask", response_model=QuestionResponse, tags=["chat"])
 async def ask_question(
     payload: QuestionRequest,
-    request: Request,
     _: None = Depends(require_read_key),
     chat_service=Depends(get_chat_service),
 ) -> QuestionResponse:
     """Ask the chatbot a question and return the generated answer."""
-    client_host = request.client.host if request.client else "unknown"
+    session_id = payload.session_id or str(uuid.uuid4())
     result = chat_service.ask(
         AskRequest(
             question=payload.question,
-            thread_id=client_host,
+            session_id=session_id,
             manual_id=payload.manual_id,
+            user_id=payload.user_id,
         )
     )
     return QuestionResponse(
@@ -61,6 +69,57 @@ async def ask_question(
             for source in result.sources
         ],
     )
+
+
+@router.post("/ask/stream", tags=["chat"])
+async def ask_question_stream(
+    payload: QuestionRequest,
+    _: None = Depends(require_read_key),
+    chat_service=Depends(get_chat_service),
+) -> StreamingResponse:
+    """Stream the answer as newline-delimited JSON (NDJSON) events.
+
+    Each line is one JSON object: ``{"type": "token", "text": ...}`` for answer
+    fragments, a final ``{"type": "done", "trace_id": ..., "sources": [...]}``,
+    or ``{"type": "error", "message": ...}`` if generation fails mid-stream.
+    """
+    session_id = payload.session_id or str(uuid.uuid4())
+    request = AskRequest(
+        question=payload.question,
+        session_id=session_id,
+        manual_id=payload.manual_id,
+        user_id=payload.user_id,
+    )
+
+    def event_stream():
+        try:
+            for event in chat_service.stream(request):
+                if isinstance(event, AnswerToken):
+                    yield json.dumps({"type": "token", "text": event.text}) + "\n"
+                elif isinstance(event, AnswerComplete):
+                    yield json.dumps(
+                        {
+                            "type": "done",
+                            "trace_id": event.trace_id,
+                            "sources": [
+                                {
+                                    "url": source.url,
+                                    "title": source.title,
+                                    "score": source.score,
+                                }
+                                for source in event.sources
+                            ],
+                        }
+                    ) + "\n"
+        except Exception:
+            # Once streaming has started the HTTP status is already 200, so
+            # surface failures as an in-band error event instead of a 5xx.
+            logger.exception("Streaming answer failed")
+            yield json.dumps(
+                {"type": "error", "message": "answer_generation_failed"}
+            ) + "\n"
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
 
 
 @router.post(

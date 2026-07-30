@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from support_chatbot import __version__
 from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
 from support_chatbot.adapters.document_loader import KreuzbergDocumentLoader
+from support_chatbot.adapters.prompt_provider import LangfusePromptProvider
 from support_chatbot.adapters.vector_store import AzureVectorStoreProvider
 from support_chatbot.api.errors import register_exception_handlers
 from support_chatbot.api.log import setup_logging
@@ -62,8 +63,11 @@ def create_app(
                 raise RuntimeError(
                     "Vector store provider is required for default chat service"
                 )
-            engine = LangGraphConversationEngine(app_settings, provider)
-            app.state.chat_service = ChatService(engine)
+            prompt_provider = LangfusePromptProvider(app_settings)
+            engine = LangGraphConversationEngine(
+                app_settings, provider, prompt_provider
+            )
+            app.state.chat_service = ChatService(engine, prompt_provider)
         else:
             app.state.chat_service = chat_service_factory(app_settings)
 

@@ -13,7 +13,3 @@
     # boilerplate_threshold (0..1) of the pages. Defaults: true / 0.9.
     strip_boilerplate: true
     boilerplate_threshold: 0.9
-    # Optional: per-manual system prompt, relative to the support_chatbot
-    # package (e.g. "prompts/manual_121.md"). Falls back to the default
-    # prompt at prompts/support_chatbot_prompt.md when omitted.
-    # prompt_file: "prompts/manual_121.md"
