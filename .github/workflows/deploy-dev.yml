@@ -27,8 +27,8 @@ jobs:
         run: uv run ruff check .
 
       - name: Run tests
-        # Exclude the integration tier (live-Azure LLM-as-judge RAG evals); those
-        # run in rag-evals.yml, never on the deploy path.
+        # Exclude the integration tier (live-Azure end-to-end smoke tests); those
+        # hit real services and never run on the deploy path.
         run: uv run -- python -m pytest tests -m "not integration" -v
 
   build-and-push-image:
@@ -64,6 +64,8 @@ jobs:
     environment:
       name: 'dev'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    outputs:
+      webapp-url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
       - name: Deploy container image to Azure Web App (dev)
         id: deploy-to-webapp
@@ -73,3 +75,47 @@ jobs:
           slot-name: 'dev'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_DEV }}
           images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
+
+  smoke-test:
+    # Post-deploy, non-blocking smoke test: calls the live dev service over HTTP
+    # to confirm the just-deployed instance answers end-to-end (its own Azure /
+    # Langfuse config is exercised server-side, so CI only needs one read key).
+    # `continue-on-error` keeps a failure visible as a red check without blocking
+    # the deploy that already ran.
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: 'dev'
+    env:
+      APP_URL: ${{ needs.deploy.outputs.webapp-url }}
+      AUTH_API_KEY: ${{ secrets.AUTH_API_KEY }}
+    steps:
+      - name: Wait for the service to be healthy
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            if curl -fsS "${APP_URL}/health" > /dev/null; then
+              echo "Service is healthy."
+              exit 0
+            fi
+            echo "Attempt $i: service not ready yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "::error::Service did not become healthy in time."
+          exit 1
+
+      - name: Ask a question end-to-end
+        run: |
+          set -euo pipefail
+          response=$(curl -fsS -X POST "${APP_URL}/ask" \
+            -H "Authorization: ${AUTH_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"question": "How do I make a payment?", "manual_id": "121"}')
+          echo "Response: ${response}"
+          answer=$(printf '%s' "${response}" | jq -r '.answer // empty')
+          if [ -z "${answer}" ]; then
+            echo "::error::/ask returned an empty answer."
+            exit 1
+          fi
+          echo "Received a non-empty answer from the live service."

@@ -177,7 +177,6 @@ Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh
 | `ENVIRONMENT` | `prod` | Deployment environment. Namespaces vector-store indexes, selects the Langfuse prompt label, and tags Langfuse traces. `prod` keeps bare index names / the `Production` label. |
 | `RETRIEVAL_K` | `8` | Manual pages retrieved per question. Lower reduces latency/cost at the risk of missing context. |
 | `CITATIONS_ENABLED` | `true` | Add inline `[n]` citations mapping answers to sources. |
-| `MODEL_JUDGE` | _(none)_ | Evaluation-only: separate (stronger) deployment used as LLM-as-judge in offline RAG tests. Unset skips those tests. |
 | `LANGFUSE_BASE_URL` | _(Langfuse cloud)_ | Base URL of a self-hosted Langfuse. Set only when not using Langfuse cloud. |
 
 > Setting the Langfuse keys also enables LLM tracing (latency, token usage,

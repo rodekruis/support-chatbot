@@ -35,7 +35,6 @@ dev = [
   "ruff>=0.6.0",
   "ty",
   "import-linter>=2.0",
-  "deepeval>=4.0",
   "streamlit",
 ]
 

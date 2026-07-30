@@ -39,10 +39,6 @@ class AppSettings(BaseSettings):
     # Add inline [n] citations to answers, mapping to the retrieved sources.
     # Generated in the same pass as the answer. Enabled by default.
     citations_enabled: bool = Field(default=True, alias="CITATIONS_ENABLED")
-    # Optional, evaluation-only: a separate (ideally stronger) deployment used as
-    # the LLM-as-judge in the offline RAG quality tests. Kept distinct from
-    # MODEL_CHAT so a model never grades its own output (self-preference bias).
-    model_judge: str | None = Field(default=None, alias="MODEL_JUDGE")
 
     # Optional, observability-only: self-hosted Langfuse for LLM tracing. When
     # both keys are unset, tracing is disabled and the app behaves as before.
