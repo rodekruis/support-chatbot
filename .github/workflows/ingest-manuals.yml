@@ -1,6 +1,10 @@
 name: ingest manuals
 
 on:
+  schedule:
+    # 00:00 UTC daily. Scheduled runs have no inputs, so they target 'prod'
+    # (see the `inputs.environment || 'prod'` fallbacks below).
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       environment:
@@ -15,7 +19,7 @@ jobs:
   ingest:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ inputs.environment || 'prod' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,17 +48,17 @@ jobs:
           set -euo pipefail
 
           if [ -z "${WRITE_KEY:-}" ]; then
-            echo "::error::AUTH_API_KEY_WRITE secret is not set for the '${{ inputs.environment }}' environment."
+            echo "::error::AUTH_API_KEY_WRITE secret is not set for the '${{ inputs.environment || 'prod' }}' environment."
             exit 1
           fi
 
           # Derived from the Azure Web App used in the deploy workflows
           # (app-name 'support-chatbot'). The prod slot is served on the bare
           # hostname; non-prod slots get a '-${environment}' suffix.
-          if [ "${{ inputs.environment }}" = "prod" ]; then
+          if [ "${{ inputs.environment || 'prod' }}" = "prod" ]; then
             base_url="https://support-chatbot.azurewebsites.net"
           else
-            base_url="https://support-chatbot-${{ inputs.environment }}.azurewebsites.net"
+            base_url="https://support-chatbot-${{ inputs.environment || 'prod' }}.azurewebsites.net"
           fi
           failed=0
 
