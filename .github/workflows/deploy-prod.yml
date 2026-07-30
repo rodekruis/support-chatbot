@@ -7,23 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-push-image:
     runs-on: ubuntu-latest
-    environment:
-      name: 'prod'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    outputs:
-      webapp-url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
-      - name: Resolve image tag
-        id: image
-        shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.image_sha }}" ]; then
-            echo "tag=${{ github.event.inputs.image_sha }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          fi
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to registry
         uses: docker/login-action@v3
@@ -32,25 +22,26 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Wait for image tag in registry
-        shell: bash
-        run: |
-          IMAGE="${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}"
-          echo "Waiting for image: $IMAGE"
+      - name: Build and push container image to container registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          for i in {1..30}; do
-            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
-              echo "Image is available."
-              exit 0
-            fi
-
-            echo "Image not available yet (attempt $i/30), waiting 20s..."
-            sleep 20
-          done
-
-          echo "::error::Image $IMAGE was not found after waiting."
-          exit 1
-
+  deploy:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    environment:
+      name: 'prod'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    outputs:
+      webapp-url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    steps:
       - name: Deploy container image to Azure Web App (prod)
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -58,7 +49,7 @@ jobs:
           app-name: 'support-chatbot'
           slot-name: 'prod'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ steps.image.outputs.tag }}
+          images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
 
   smoke-test:
     # Post-deploy, non-blocking smoke test: calls the live prod service over HTTP
