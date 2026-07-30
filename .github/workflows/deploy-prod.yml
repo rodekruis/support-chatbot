@@ -47,7 +47,6 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'support-chatbot'
-          slot-name: 'prod'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: ${{ secrets.REGISTRY_USERNAME }}.azurecr.io/${{ github.event.repository.name }}:${{ github.sha }}
 
