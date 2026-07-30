@@ -11,8 +11,8 @@ redeploy. Three kinds of prompts are used:
   ``121``), used as the system prompt for that product's answers.
 
 Which version is fetched is controlled by a Langfuse label derived from the
-deployment environment (``prod`` maps to ``Production``; other environments use
-their own name, e.g. ``dev``).
+deployment environment (``prod`` maps to Langfuse's built-in ``production``
+label; other environments use their own name, e.g. ``dev``).
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ class LangfusePromptProvider(PromptProvider):
     @staticmethod
     def _label_for_environment(environment: str) -> str:
         """Map the deployment environment to a Langfuse prompt label."""
-        return "Production" if environment == "prod" else environment
+        return "production" if environment == "prod" else environment
 
     def get_product_prompt(self, product: str) -> str:
         """Return the product-specific system prompt named after ``product``."""
