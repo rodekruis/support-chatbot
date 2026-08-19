@@ -34,7 +34,7 @@ class AppSettings(BaseSettings):
     # Number of manual pages retrieved per question. Lower values reduce
     # retrieval and generation latency (and cost) at the risk of missing
     # relevant context.
-    retrieval_k: int = Field(default=8, ge=1, alias="RETRIEVAL_K")
+    retrieval_k: int = Field(default=5, ge=1, alias="RETRIEVAL_K")
 
     # Add inline [n] citations to answers, mapping to the retrieved sources.
     # Generated in the same pass as the answer. Enabled by default.

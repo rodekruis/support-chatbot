@@ -37,6 +37,10 @@ logger = logging.getLogger(__name__)
 
 _CITATION_MARKER = re.compile(r"\s*\[(\d{1,2})\]")
 
+# Routing is a cheap classification on the critical path; a stalled call must
+# not block the answer.
+_ROUTER_TIMEOUT_S = 6.0
+
 _ROUTER_INSTRUCTION = (
     "You route messages for a product support assistant. Decide whether "
     "answering the user's latest message requires the product manual.\n"
@@ -84,6 +88,17 @@ class LangGraphConversationEngine(ConversationEngine):
             openai_api_version=settings.azure_openai_api_version,
             api_key=settings.azure_openai_api_key.get_secret_value(),
             temperature=0.2,
+        )
+        # Separate client for routing: fail fast (short timeout, no retries) so a
+        # slow shared-capacity call falls back to retrieval instead of hanging.
+        self._router_llm = AzureChatOpenAI(
+            azure_endpoint=settings.azure_openai_endpoint,
+            azure_deployment=settings.model_chat,
+            openai_api_version=settings.azure_openai_api_version,
+            api_key=settings.azure_openai_api_key.get_secret_value(),
+            temperature=0.0,
+            timeout=_ROUTER_TIMEOUT_S,
+            max_retries=0,
         )
         self._citations_enabled = settings.citations_enabled
         self._retrieval_k = settings.retrieval_k
@@ -412,9 +427,10 @@ class LangGraphConversationEngine(ConversationEngine):
         recent = [m for m in messages if m.type in ("human", "ai")][-6:]
         prompt = [SystemMessage(_ROUTER_INSTRUCTION), *recent]
         try:
-            result = self._llm.invoke(prompt)
+            result = self._router_llm.invoke(prompt)
         except OpenAIError as exc:
-            raise ExternalServiceError(f"Routing failed: {exc}") from exc
+            logger.warning("Router call failed, defaulting to retrieve: %s", exc)
+            return "retrieve"
         return self._parse_route(getattr(result, "content", ""))
 
     @staticmethod

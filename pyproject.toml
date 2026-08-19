@@ -79,6 +79,10 @@ extend-immutable-calls = [
   "fastapi.Header",
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Operator CLI scripts write their reports to stdout; print is the intended output.
+"scripts/*" = ["T20"]
+
 [tool.importlinter]
 root_package = "support_chatbot"
 
