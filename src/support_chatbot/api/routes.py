@@ -46,7 +46,7 @@ async def docs_redirect() -> RedirectResponse:
 
 
 @router.post("/ask", response_model=QuestionResponse, tags=["chat"])
-async def ask_question(
+def ask_question(
     payload: QuestionRequest,
     _: None = Depends(require_read_key),
     chat_service=Depends(get_chat_service),
@@ -128,7 +128,7 @@ async def ask_question_stream(
     status_code=202,
     tags=["chat"],
 )
-async def submit_feedback(
+def submit_feedback(
     payload: FeedbackRequest,
     _: None = Depends(require_read_key),
     chat_service=Depends(get_chat_service),
