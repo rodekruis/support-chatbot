@@ -1,5 +1,8 @@
 """Unit tests for the conversation engine source extraction."""
 
+from langchain_core.messages import HumanMessage
+from openai import OpenAIError
+
 from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
 from support_chatbot.domain.models import Document
 
@@ -65,6 +68,21 @@ def test_parse_route_defaults_to_retrieve():
     assert LangGraphConversationEngine._parse_route("retrieve") == "retrieve"
     assert LangGraphConversationEngine._parse_route("") == "retrieve"
     assert LangGraphConversationEngine._parse_route("unsure, maybe direct") == "retrieve"
+
+
+def test_classify_route_falls_back_to_retrieve_on_router_error():
+    """A failed/slow router call defaults to retrieval instead of raising."""
+    engine = object.__new__(LangGraphConversationEngine)
+
+    class _FailingLLM:
+        def invoke(self, _prompt):
+            raise OpenAIError("shared-capacity stall")
+
+    engine._router_llm = _FailingLLM()
+
+    route = engine._classify_route([HumanMessage(content="How do I import beneficiaries?")])
+
+    assert route == "retrieve"
 
 
 def test_answer_metadata_gates_context_on_retrieval():

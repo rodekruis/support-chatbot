@@ -175,7 +175,7 @@ Read endpoints require `AUTH_API_KEY`. Write endpoints (for vector store refresh
 | --- | --- | --- |
 | `PORT` | `8000` | Port the API binds to. |
 | `ENVIRONMENT` | `prod` | Deployment environment. Namespaces vector-store indexes, selects the Langfuse prompt label, and tags Langfuse traces. `prod` keeps bare index names / the `Production` label. |
-| `RETRIEVAL_K` | `8` | Manual pages retrieved per question. Lower reduces latency/cost at the risk of missing context. |
+| `RETRIEVAL_K` | `5` | Manual pages retrieved per question. Lower reduces latency/cost at the risk of missing context. |
 | `CITATIONS_ENABLED` | `true` | Add inline `[n]` citations mapping answers to sources. |
 | `LANGFUSE_BASE_URL` | _(Langfuse cloud)_ | Base URL of a self-hosted Langfuse. Set only when not using Langfuse cloud. |
 
