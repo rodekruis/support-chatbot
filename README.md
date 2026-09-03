@@ -138,8 +138,8 @@ off-topic turns that never retrieved), and map:
 
 Targeting `chat-turn` (rather than the LLM generation) also ensures the judge
 runs once per answer instead of on every internal LLM call. Traces are tagged
-with `manual:<manual_id>`, carry the request's `session_id`/`user_id`, and are
-namespaced by the `ENVIRONMENT` value (filterable in the Langfuse UI).
+with `manual:<manual_id>`, carry the request's `session_id`/`user_id`, and are namespaced by the
+`ENVIRONMENT` value (filterable in the Langfuse UI).
 
 ### Configuration
 

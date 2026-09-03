@@ -11,8 +11,10 @@ class QuestionRequest(BaseModel):
         min_length=1,
         description="Id of the manual to answer from.",
     )
+    # Langfuse silently drops propagated session/user ids longer than 200 chars.
     session_id: str | None = Field(
         default=None,
+        max_length=200,
         description=(
             "Optional client-generated conversation id. Groups a user's turns "
             "into one thread (conversation memory) and is used as the Langfuse "
@@ -22,6 +24,7 @@ class QuestionRequest(BaseModel):
     )
     user_id: str | None = Field(
         default=None,
+        max_length=200,
         description="Optional id of the end user, forwarded to Langfuse tracing.",
     )
 

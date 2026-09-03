@@ -20,7 +20,7 @@ dependencies = [
   "langchain-openai",
   "langchain-text-splitters",
   "langgraph",
-  "langfuse",
+  "langfuse>=4,<5",
   "pyyaml>=6.0",
   "pydantic-settings",
   "python-dotenv",

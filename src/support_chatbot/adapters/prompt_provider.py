@@ -40,7 +40,7 @@ class LangfusePromptProvider(PromptProvider):
         self._client = Langfuse(
             public_key=settings.langfuse_public_key.get_secret_value(),
             secret_key=settings.langfuse_secret_key.get_secret_value(),
-            host=settings.langfuse_host,
+            base_url=settings.langfuse_base_url,
         )
         self._label = self._label_for_environment(settings.environment)
 

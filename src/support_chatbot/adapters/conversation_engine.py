@@ -125,7 +125,7 @@ class LangGraphConversationEngine(ConversationEngine):
         return Langfuse(
             public_key=settings.langfuse_public_key.get_secret_value(),
             secret_key=settings.langfuse_secret_key.get_secret_value(),
-            host=settings.langfuse_host,
+            base_url=settings.langfuse_base_url,
             environment=settings.environment,
         )
 

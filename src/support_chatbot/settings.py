@@ -42,7 +42,7 @@ class AppSettings(BaseSettings):
 
     # Optional, observability-only: self-hosted Langfuse for LLM tracing. When
     # both keys are unset, tracing is disabled and the app behaves as before.
-    langfuse_host: str | None = Field(default=None, alias="LANGFUSE_BASE_URL")
+    langfuse_base_url: str | None = Field(default=None, alias="LANGFUSE_BASE_URL")
     langfuse_public_key: SecretStr | None = Field(
         default=None, alias="LANGFUSE_PUBLIC_KEY"
     )
