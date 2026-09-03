@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Generator, Iterator
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -32,6 +33,9 @@ from support_chatbot.domain.ports import (
     VectorStoreProvider,
 )
 from support_chatbot.settings import AppSettings
+
+if TYPE_CHECKING:
+    from langfuse import Langfuse
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +83,7 @@ class LangGraphConversationEngine(ConversationEngine):
         settings: AppSettings,
         provider: VectorStoreProvider,
         prompt_provider: PromptProvider,
+        langfuse: Langfuse | None,
     ) -> None:
         """Initialize the language model, retrieval graph, and tracing."""
         self._provider = provider
@@ -108,26 +113,9 @@ class LangGraphConversationEngine(ConversationEngine):
             else ""
         )
         self._direct_answer_prompt = prompt_provider.get_direct_answer_prompt()
-        self._langfuse = self._init_langfuse(settings)
+        # ``None`` disables tracing; the engine then behaves as if Langfuse were absent.
+        self._langfuse = langfuse
         self._graph = self._build_graph()
-
-    @staticmethod
-    def _init_langfuse(settings: AppSettings):
-        """Initialize the global Langfuse client when keys are configured.
-
-        Returns the client (so callers can flush on shutdown) or ``None`` when
-        tracing is disabled, in which case the engine behaves exactly as before.
-        """
-        if not (settings.langfuse_public_key and settings.langfuse_secret_key):
-            return None
-        from langfuse import Langfuse
-
-        return Langfuse(
-            public_key=settings.langfuse_public_key.get_secret_value(),
-            secret_key=settings.langfuse_secret_key.get_secret_value(),
-            host=settings.langfuse_host,
-            environment=settings.environment,
-        )
 
     def _build_graph(self):
         def router(state: ChatState):

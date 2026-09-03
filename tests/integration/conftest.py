@@ -36,9 +36,13 @@ def provider(eval_settings: AppSettings):
 def chat_service(eval_settings: AppSettings, provider):
     """Live chat service backed by Azure OpenAI + Azure AI Search."""
     from support_chatbot.adapters.conversation_engine import LangGraphConversationEngine
+    from support_chatbot.adapters.langfuse_client import build_langfuse_client
     from support_chatbot.adapters.prompt_provider import LangfusePromptProvider
     from support_chatbot.services.chat_service import ChatService
 
-    prompt_provider = LangfusePromptProvider(eval_settings)
-    engine = LangGraphConversationEngine(eval_settings, provider, prompt_provider)
+    langfuse = build_langfuse_client(eval_settings)
+    prompt_provider = LangfusePromptProvider(langfuse, eval_settings.environment)
+    engine = LangGraphConversationEngine(
+        eval_settings, provider, prompt_provider, langfuse
+    )
     return ChatService(engine, prompt_provider)

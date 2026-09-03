@@ -17,9 +17,13 @@ label; other environments use their own name, e.g. ``dev``).
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from support_chatbot.domain.errors import ExternalServiceError
 from support_chatbot.domain.ports import PromptProvider
-from support_chatbot.settings import AppSettings
+
+if TYPE_CHECKING:
+    from langfuse import Langfuse
 
 _CITATION_PROMPT_NAME = "citations"
 _DIRECT_ANSWER_PROMPT_NAME = "direct-answer"
@@ -28,21 +32,15 @@ _DIRECT_ANSWER_PROMPT_NAME = "direct-answer"
 class LangfusePromptProvider(PromptProvider):
     """Fetch system prompts from Langfuse prompt management."""
 
-    def __init__(self, settings: AppSettings) -> None:
-        """Create a Langfuse client, requiring the Langfuse credentials."""
-        if not (settings.langfuse_public_key and settings.langfuse_secret_key):
+    def __init__(self, client: Langfuse | None, environment: str) -> None:
+        """Wrap the shared Langfuse client, requiring the Langfuse credentials."""
+        if client is None:
             raise ExternalServiceError(
                 "Langfuse credentials are required to load prompts; set "
                 "LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY."
             )
-        from langfuse import Langfuse
-
-        self._client = Langfuse(
-            public_key=settings.langfuse_public_key.get_secret_value(),
-            secret_key=settings.langfuse_secret_key.get_secret_value(),
-            host=settings.langfuse_host,
-        )
-        self._label = self._label_for_environment(settings.environment)
+        self._client = client
+        self._label = self._label_for_environment(environment)
 
     @staticmethod
     def _label_for_environment(environment: str) -> str:
