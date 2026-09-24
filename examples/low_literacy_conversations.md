@@ -3,735 +3,818 @@
 - Endpoint: `https://support-chatbot-dev.azurewebsites.net`
 - Manual: `121`
 - User: `eval-seed-user-low-literacy`
-- Generated: 2026-09-24 10:55 UTC
+- Generated: 2026-09-24 11:04 UTC
+
+> [!NOTE]
+> **User** turns are blue.
+
+> [!TIP]
+> **Chatbot** answers are green.
 
 ## Conversation 1
 
-`session: f54a4a5d-bfa5-4fb7-8354-5b7124c95238`
+`session: 38b579fe-f0f5-4b8b-9b42-5dcf1ae7fa26`
 
-**User:** how i put the peple from my excel in the sistem
+> [!NOTE]
+> **User**
+>
+> how i put the peple from my excel in the sistem
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> To put people from your Excel into the 121 system, you need to **import a registration list as a CSV file**. [1]
+>
+> 1) **Download the CSV template** from 121  
+> - Open your **Program** → go to **Registrations**  
+> - Click **Import new registrations** (right side) → **Download template CSV-file** [1]
+>
+> 2) **Fill in your data in the template**  
+> - Open the template in Excel  
+> - Copy your registration data into the template, making sure each value goes into the **correct column/label** [1]
+>
+> 3) **Upload and import the CSV**  
+> - Go back to **Registrations** in your selected Program  
+> - Click **Import new registrations**  
+> - Choose your **matched CSV file** from your computer  
+> - Click **Import file**  
+> - Wait for the confirmation pop-up (it may take some time depending on the number of registrations) [1]
+>
+> If the import fails, check that your file is **correctly formatted and saved as .CSV**. [1]
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+> - [Add team members](https://manual.121.global/en/team/add-team-members/)
+>
+> </details>
+>
+> `trace: 877eb91d6a106a80dec4e1b897b3e834`
 
-To put people from your Excel into the 121 system, you need to **import a registration list as a CSV file**. [1]
+> [!NOTE]
+> **User**
+>
+> it dont work it give me a error
 
-1) **Download the CSV template** from 121 (it’s generated based on your program registration form).  
-- Open your **Program** → **Registrations**  
-- Click **Import new registrations** (right side) → **Download template CSV-file** [1]
+> [!TIP]
+> **Chatbot**
+>
+> Sorry it’s not working. The manual says that if the **registration import is unsuccessful or shows an error message**, you should **check that your Excel file is correctly formatted and saved as .CSV**. [1]
+>
+> A few things to verify based on the import requirements:
+> - Make sure you used the **121 template CSV** (downloaded from your Program) and that your data is in the **correct columns/labels**. [1]
+> - Confirm the file you upload is saved as **.CSV** (not .xlsx or another format). [1]
+>
+> If you tell me the **exact error message** you see (or a screenshot), I can help you narrow down what to check next.
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [What if I see empty page](https://manual.121.global/en/registration/registration-list-empty/)
+>
+> </details>
+>
+> `trace: aaa729f9c751f0b981bf8fbcb03de24e`
 
-2) **Copy your Excel data into the template**  
-- Open the template in Excel  
-- Copy your registration data into the matching columns/labels in the template  
-- Save it as a **.CSV** file [1]
+> [!NOTE]
+> **User**
+>
+> wher can i find a exampel file to copy
 
-3) **Import the CSV into 121**  
-- Go back to **Program → Registrations**  
-- Click **Import new registrations**  
-- Choose the **CSV file** you prepared  
-- Click **Import file**  
-- Wait for the confirmation pop-up (it may take some time depending on the number of registrations) [1]
-
-If the import fails or shows an error, check that your file is **correctly formatted and saved as .CSV**. [1]
-
-<details><summary>Sources</summary>
-
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-- [Add team members](https://manual.121.global/en/team/add-team-members/)
-
-</details>
-
-`trace: fa6ba0e1742cd86ca6e8a51c5e7fe970`
-
-**User:** it dont work it give me a error
-
-**Chatbot:**
-
-Sorry it’s not working. The manual says that if the import is unsuccessful or shows an error, you should **check that your Excel file is correctly formatted and saved as .CSV**. [1]
-
-A few things to verify based on the import requirements:
-- Make sure you’re uploading a file that is **saved as .CSV** (not .xlsx). [1]
-- Make sure you used the **121 template** and that your data is in the **correct columns/labels**. [1]
-
-If you tell me the **exact error message** you see (or a screenshot), I can help you narrow down what to fix.
-
-<details><summary>Sources</summary>
-
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [What if I see empty page](https://manual.121.global/en/registration/registration-list-empty/)
-
-</details>
-
-`trace: ba4fd5fb91f77251e0e463fe1d19e8b4`
-
-**User:** wher can i find a exampel file to copy
-
-**Chatbot:**
-
-You can get an example/template directly from 121:
-
-- Go to your **Program** → **Registrations**  
-- Click **Import new registrations** (right side)  
-- Select **Download template CSV-file**  
-- Open that downloaded CSV in Excel and copy your data into it [1]
-
-<details><summary>Sources</summary>
-
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [What if I see empty page](https://manual.121.global/en/registration/registration-list-empty/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-
-</details>
-
-`trace: 1c2de82fc1122928379db22ae83ad5fe`
+> [!TIP]
+> **Chatbot**
+>
+> You can get an example/template directly from 121:
+>
+> - Go to your **Program** → **Registrations** page  
+> - Click **Import new registrations** (right side)  
+> - Choose **Download template CSV-file** [1]
+>
+> That downloaded template is automatically generated based on your program registration form, and you can copy your registration data into it. [1]
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Registrations page](https://manual.121.global/en/registration/registrations-page/)
+>
+> </details>
+>
+> `trace: 030bfc74663f0da662626ac8a0a0e7fa`
 
 ## Conversation 2
 
-`session: 7b09cc43-e470-40f5-a658-19a4973a64c8`
+`session: 309069f6-720f-45a7-8ca0-a4a0289bb32d`
 
-**User:** the money did not arive to the famlies why
+> [!NOTE]
+> **User**
+>
+> the money did not arive to the famlies why
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> I can help with 121 payment troubleshooting. In 121, when money doesn’t arrive to families, it’s usually because the payment ended up **Failed** (or is still **Pending/Processing**).
+>
+> ### 1) Check the payment status
+> - **Failed**: the transaction failed and registrations **have not received any payments**. [1][2]
+> - **Pending / Processing**: the payment is waiting for reconciliation/confirmation, so it may not be delivered yet. [1][2]
+>
+> ### 2) If it’s **Failed**, check the reason
+> On the **Payments** page, open the specific payment and filter the registration list by **Transaction status = Failed**. Then check the **Reason** column. Common reasons include: [5]
+> - **Incorrect payment details** (e.g., full name, phone number, bank account number, ID number, or location/KYC mismatch)
+> - **Wrong format of the reconciliation file** (for manual payments)
+> - **Registration changed payment details** (so the FSP can’t match them)
+> - **Integration issue (FSP–121)** (if you use an integrated FSP)
+>
+> ### 3) Fix and retry (if applicable)
+> If you identify the issue, you can **retry failed transactions**:
+> - Go to the **Payments** page → open the payment round
+> - Select the registrations with **failed** status
+> - Click **Retry failed transaction(s)** and confirm **Retry transactions** [5]
+>
+> If you tell me what you see for the payment status (**Failed**, **Pending**, or **Processing**) and (if available) the **Reason** shown in the failed list, I can guide you on the next step.
+>
+> <details><summary>Sources</summary>
+>
+> - [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
+> - [Payments page](https://manual.121.global/en/payment/payment/)
+> - [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
+> - [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
+> - [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
+>
+> </details>
+>
+> `trace: 5eb0b4bc00fe9ef4461c9b5f338435bf`
 
-If the money didn’t arrive to the families, it’s usually because the payment ended up **Failed** (or is still **Pending/Processing**) in the 121 Platform.
+> [!NOTE]
+> **User**
+>
+> how i send it agan to only those ones
 
-### 1) Check the payment status
-- Go to the **Payments** page and open the specific payment round.
-- Look at the **transaction/payment status** for the registrations.
-
-**What the statuses mean:**
-- **FAILED**: the transaction failed and registrations **did not receive any payments**. [1][2]
-- **PENDING / PROCESSING**: the transfer is not confirmed as completed yet (for manual payments, this is typically until reconciliation is imported). [1][3]
-- **SUCCESSFUL**: the transfer was sent and families can use it. [1][2]
-
-### 2) If it’s FAILED, check the reason
-On the specific payment:
-- Filter the registration list by **Transaction status = Failed**
-- Open the **Reason** column to see why it failed. [5]
-
-Common reasons include:
-- **Incorrect payment details** (e.g., full name, phone number, bank account number, ID number, location) [5]
-- **Wrong format of the reconciliation file** (manual payment) [5]
-- **Registration changed payment details** (e.g., phone number/payment info changed) [5]
-- **Integration issues** (if you use an integrated FSP) [5]
-
-### 3) Fix and retry (if applicable)
-If you identified the issue, you can **retry failed transactions**:
-- Go to the **Payments** page → open the payment round
-- Select the registrations with **failed** status
-- Click **Retry failed transaction(s)** and confirm **Retry transactions** [5]
-
-If you tell me whether your payment method is **manual (FSP portal export/import)** or **integrated FSP**, and what status you see (**Failed / Pending / Processing**), I can point you to the most relevant next step.
-
-<details><summary>Sources</summary>
-
-- [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
-- [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
-- [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
-
-</details>
-
-`trace: 0be8f7c80bc483c6cec89eb013b20084`
-
-**User:** how i send it agan to only those ones
-
-**Chatbot:**
-
-To retry **only the registrations whose payment failed**:
-
-1. Go to the **Payments** page and open the **specific payment round**. [1]  
-2. In the transaction/registration list, **select only the registrations with status = Failed**. [1]  
-3. Click **Retry failed transaction(s)** (top right). [1]  
-4. Click **Retry transactions** to approve. [1]  
-
-After that, the platform will **automatically retry** for the selected registrations identified with **failed payment** status, and their payment status will update. [1]
-
-<details><summary>Sources</summary>
-
-- [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
-- [Payment statuses in 121](https://manual.121.global/en/payment/list-status-payment-page/)
-- [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
-- [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
-- [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
-
-</details>
-
-`trace: eff01fd5f5a03611ff77670d76b72161`
+> [!TIP]
+> **Chatbot**
+>
+> To retry **only the registrations whose payments failed**:
+>
+> 1. Go to the **Payments** page and open the **specific payment round**. [1]  
+> 2. In the transaction list, **select only the registrations** that show **Failed**. [1]  
+> 3. Click **Retry failed transaction(s)** (top right). [1]  
+> 4. Click **Approve** → **Retry transactions**. [1]  
+>
+> After that, 121 will automatically retry for the selected registrations identified with **failed payment** status, and their payment status will update. [1]
+>
+> <details><summary>Sources</summary>
+>
+> - [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
+> - [Payment statuses in 121](https://manual.121.global/en/payment/list-status-payment-page/)
+> - [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
+> - [End payments](https://manual.121.global/en/payment/end-payments/)
+> - [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
+>
+> </details>
+>
+> `trace: 534c4ff0571f3d35567da2ab672f8f15`
 
 ## Conversation 3
 
-`session: f8df1501-c19a-4c52-846f-a4d0379053b1`
+`session: ae98c8da-d358-45ed-8dd2-683686e0b4aa`
 
-**User:** i want my colega to see the projekt to how i do
+> [!NOTE]
+> **User**
+>
+> i want my colega to see the projekt to how i do
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> To let your colleague see the project, you need to check their **role/permissions** on the **Program Team**.
+>
+> - Go to your program **Settings** page → **Program Team** tab. [3][4]  
+> - If you have the permission, you can use the **pencil** to edit roles, then **select/deselect** the roles for the user and **Save changes**. [2]  
+> - Users who are not given edit permissions will typically have **View** permissions, which lets them only see the program. [1][3]
+>
+> If you tell me what you want your colleague to do (only view, or also edit/change settings), I can point you to the right place in the portal.
+>
+> <details><summary>Sources</summary>
+>
+> - [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
+> - [Change team members roles](https://manual.121.global/en/team/change-team-roles-program/)
+> - [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
+> - [Manage your program team](https://manual.121.global/en/team/team-page/)
+> - [Setting-up 121 Platform](https://manual.121.global/en/faq/setting-up-121-platform/)
+>
+> </details>
+>
+> `trace: b594849b817183c45d126e82d5b00de3`
 
-To let your colleague view (or manage) your project in the 121 Platform, you need to check their access/role in the **Program Team**.
+> [!NOTE]
+> **User**
+>
+> can she also chang the amont or only look
 
-- Go to your program and open **Settings** → **Program Team** (under the **Settings** page). [3][4]  
-- In the **Program Team** tab, you can see the users and their assigned roles. If you have permission, you can **change/add/remove roles** for a user. [2][4]  
-- Users who don’t have edit permissions will only have **View** access on that page. [1][2][4]
-
-If you tell me what you want your colleague to do (only view, or also edit/change settings), I can point you to the right role/permission level based on the platform documentation.
-
-<details><summary>Sources</summary>
-
-- [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
-- [Change team members roles](https://manual.121.global/en/team/change-team-roles-program/)
-- [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
-- [Manage your program team](https://manual.121.global/en/team/team-page/)
-- [Setting-up 121 Platform](https://manual.121.global/en/faq/setting-up-121-platform/)
-
-</details>
-
-`trace: 11125e2d400bf9fb34580a06a3284db7`
-
-**User:** can she also chang the amont or only look
-
-**Chatbot:**
-
-It depends on her role/permissions.
-
-- On the **Program Settings** page, **changing budget/payment-related amounts** (like budget, base transfer value, number of maximum payments, currency) can be done by **Program Admin** and users with **Program Update** permissions. [5]  
-- If she only has **View** permission, she can **only look**, not change amounts. [1][3][5]
-
-If you want, tell me whether she has **Program Admin**, **Program Update**, or only **View**—and I’ll confirm what she can do.
-
-<details><summary>Sources</summary>
-
-- [Data Changes Overview](https://manual.121.global/en/monitoring/data-changes/)
-- [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
-- [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
-- [Change team members roles](https://manual.121.global/en/team/change-team-roles-program/)
-- [Budget & Payment settings](https://manual.121.global/en/Settings/payment-budget-settings/)
-
-</details>
-
-`trace: b7301d8f28218492851591e317f3bd38`
+> [!TIP]
+> **Chatbot**
+>
+> It depends on her **role/permissions**.
+>
+> - **Only Program Admin and users with Program Update permissions** can change **budget/payment settings** (like the amount). [5]  
+> - If she only has **View** permission, she can **look** but not change the amount. [5]
+>
+> If you want, tell me what role(s) she currently has on the **Program Team** page, and I can help you confirm whether she should be able to edit the amount. [3][5]
+>
+> <details><summary>Sources</summary>
+>
+> - [Data Changes Overview](https://manual.121.global/en/monitoring/data-changes/)
+> - [Change team members roles](https://manual.121.global/en/team/change-team-roles-program/)
+> - [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
+> - [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
+> - [Budget & Payment settings](https://manual.121.global/en/Settings/payment-budget-settings/)
+>
+> </details>
+>
+> `trace: f32057b55d23cfe53b64f006dc868eed`
 
 ## Conversation 4
 
-`session: 6356d31e-0191-4fc7-a4a8-e4ec9894d018`
+`session: 6f7d72d7-e8b3-463d-a63b-620868285e0d`
 
-**User:** how i colect the info from the famlies wen there is no internett in the village
+> [!NOTE]
+> **User**
+>
+> how i colect the info from the famlies wen there is no internett in the village
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> If there’s no internet in the village, you can still collect beneficiary information offline using **Kobo Collect** (or another supported offline data collection app). Internet is only required when you need to **sync** the collected data back to the 121 portal—so you collect offline first, then sync once you have connectivity. [1]
+>
+> When you’re ready to sync:
+> - Make sure the device has internet/mobile data available.
+> - Then upload/sync so the registrations appear in 121. [1][3]
+>
+> If you’re doing **offline verification** (not just registration), the process is similar: you prepare an offline Kobo verification form, collect data in the field offline, then connect to the internet afterward to upload all collected forms so the updates reflect in 121. [5]
+>
+> <details><summary>Sources</summary>
+>
+> - [Setting-up 121 Platform](https://manual.121.global/en/faq/setting-up-121-platform/)
+> - [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Step-by-Step Guide - Prepare your CVA Program](https://manual.121.global/en/general/prepare-your-project/)
+> - [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
+>
+> </details>
+>
+> `trace: 9d6ad27758851e9de0b16856939d89da`
 
-If there’s no internet in the village, you can still collect beneficiary information offline using a mobile data-collection app (e.g., **Kobo Collect**). Offline collection is possible, but **you will need internet later to sync/upload the collected data into the 121 platform**. [1]
+> [!NOTE]
+> **User**
+>
+> and wen the internet come back what i must do
 
-When you’re back online, make sure the devices are connected so the collected forms can be synced and the registration list can be updated in 121. [1][3]
-
-<details><summary>Sources</summary>
-
-- [Setting-up 121 Platform](https://manual.121.global/en/faq/setting-up-121-platform/)
-- [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [Step-by-Step Guide - Prepare your CVA Program](https://manual.121.global/en/general/prepare-your-project/)
-- [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
-
-</details>
-
-`trace: 1ba109bf9601467c8252138b756f7111`
-
-**User:** and wen the internet come back what i must do
-
-**Chatbot:**
-
-When internet comes back, you must **upload/sync all the Kobo forms** so the collected data is sent to the 121 platform.
-
-- **Offline verification (if you used Kobo for verification):** connect your devices to the internet, **upload ALL collected Kobo forms**, then **check that the changes are correctly reflected on the 121 platform**. [1]
-- **Registration via Kobo (if you used Kobo for registrations):** the registrations are imported into 121 **only when an internet connection is established** (so connect the device and ensure the Kobo form can sync). [3]
-
-If you tell me whether you collected data for **registration** or for **field verification**, I can point you to the exact “after” step for that case.
-
-<details><summary>Sources</summary>
-
-- [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
-- [Setting-up 121 Platform](https://manual.121.global/en/faq/setting-up-121-platform/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [Step-by-Step Guide - Prepare your CVA Program](https://manual.121.global/en/general/prepare-your-project/)
-- [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
-
-</details>
-
-`trace: 7bfdc4e376fb2d19ca8661f2674c9cd5`
+> [!TIP]
+> **Chatbot**
+>
+> When the internet comes back, you must **upload/sync the data you collected offline** so it updates in the 121 Platform.
+>
+> - **For offline verification (Kobo forms):** connect your devices to the internet and make sure you **upload ALL collected Kobo forms**, then **check that all changes are correctly reflected** on the 121 platform. [1]
+>
+> - **For registrations collected with Kobo:** the Kobo integration uploads registrations to 121 **only when an internet connection is established** (real-time once connected). [2]
+>
+> If you tell me whether you mean **registration** or **verification**, I can point you to the exact “what to do next” steps for that case.
+>
+> <details><summary>Sources</summary>
+>
+> - [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Step-by-Step Guide - Prepare your CVA Program](https://manual.121.global/en/general/prepare-your-project/)
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
+>
+> </details>
+>
+> `trace: 54c55295d366a780742425f5f45982b5`
 
 ## Conversation 5
 
-`session: bb77b675-3738-46b6-9b3e-d18650f8314a`
+`session: f315f95b-f620-40b0-a5dd-57bd4a968f8a`
 
-**User:** i cant go inside the sistem it say my paswrd is wrong
+> [!NOTE]
+> **User**
+>
+> i cant go inside the sistem it say my paswrd is wrong
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> Sorry you’re running into that. Here are the 121 steps to regain access:
+>
+> 1) **Double-check your login details**
+> - Make sure you enter the **email address exactly as in the login email** (it’s case sensitive) and use the **password that was shared in your email**. [1]
+>
+> 2) **If you forgot the password: reset it**
+> - Contact your **121 User Manager** to reset your password via the **Users** page.
+> - The User Manager will use the **three dots** on your user row → **Reset Password** → **Confirm**.
+> - An **email** will be sent to you with instructions to set a new password. [2]
+>
+> 3) **If you still can’t log in**
+> - Contact support at **support@121.global**. [2]
+>
+> If you tell me whether your organization uses **SSO (Microsoft login)**, I can point you to the right login method. [1]
+>
+> <details><summary>Sources</summary>
+>
+> - [Log In](https://manual.121.global/en/general/logging-in/)
+> - [Reset password](https://manual.121.global/en/general/reset-password/)
+> - [Add User to 121](https://manual.121.global/en/users/add-users/)
+> - [Change current password](https://manual.121.global/en/general/change-current-password/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+>
+> </details>
+>
+> `trace: 42cf4e013759be73aba16dfa546d1ca0`
 
-Sorry you’re running into that. Here are the 121 steps to regain access:
+> [!NOTE]
+> **User**
+>
+> who can giv me a new paswrd
 
-1) **Double-check your login details**
-- Make sure you enter the **email address exactly as in the email** (it’s case sensitive) and use the **password that was shared in your login email**. [1]
-
-2) **If you forgot your password, reset it**
-- Contact your **121 User Manager** to reset your password from the **Users page**:
-  - In the user row, click the **three dots**
-  - Select **Reset Password**
-  - Confirm
-- An **email** will be sent to you with instructions to set a new password. [2]
-
-3) **If you still can’t log in**
-- Contact support at **support@121.global**. [2]
-
-If you tell me whether you’re using **SSO (Microsoft account)** or the **email+password login link**, I can point you to the right path.
-
-<details><summary>Sources</summary>
-
-- [Log In](https://manual.121.global/en/general/logging-in/)
-- [Reset password](https://manual.121.global/en/general/reset-password/)
-- [Add User to 121](https://manual.121.global/en/users/add-users/)
-- [Change current password](https://manual.121.global/en/general/change-current-password/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-
-</details>
-
-`trace: 1ab7cd9dd8df31a6712e788aae774414`
-
-**User:** who can giv me a new paswrd
-
-**Chatbot:**
-
-A new password can be given/reset by your **121 User Manager** (they can reset your password from the **Users** page). [2]
-
-If you’re still not able to log in after that, you can contact **support@121.global**. [2]
-
-<details><summary>Sources</summary>
-
-- [Add User to 121](https://manual.121.global/en/users/add-users/)
-- [Reset password](https://manual.121.global/en/general/reset-password/)
-- [Change current password](https://manual.121.global/en/general/change-current-password/)
-- [Log In](https://manual.121.global/en/general/logging-in/)
-- [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
-
-</details>
-
-`trace: 83dca2470b9b812d5eaabddd79fcfd37`
+> [!TIP]
+> **Chatbot**
+>
+> A new password can be provided/reset by your **121 User Manager** (they can reset your password from the **Users** page, and you’ll receive an email to set a new one). [4]
+>
+> If you’re not able to log in even after that, you can contact **support@121.global**. [4]
+>
+> <details><summary>Sources</summary>
+>
+> - [Add User to 121](https://manual.121.global/en/users/add-users/)
+> - [Change current password](https://manual.121.global/en/general/change-current-password/)
+> - [Log In](https://manual.121.global/en/general/logging-in/)
+> - [Reset password](https://manual.121.global/en/general/reset-password/)
+> - [Users page](https://manual.121.global/en/users/users-roles-page/)
+>
+> </details>
+>
+> `trace: 4d4ed5239a0ff22a37c81375ac9d3f65`
 
 ## Conversation 6
 
-`session: c0e84d19-dc6b-4686-a250-095e72a38914`
+`session: 6d1ce1df-2981-4fac-a65e-a865bf74c594`
 
-**User:** some famlies are two time in my list
+> [!NOTE]
+> **User**
+>
+> some famlies are two time in my list
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> It sounds like you may have duplicate registrations in your list. In 121, duplicates can be checked and resolved from the **Deduplication** area, and duplicates are identified using **unique criteria** (commonly phone number or ID number) configured in your Kobo form. [2]
+>
+> To resolve duplicates:
+> 1. Go to the **Registrations** page.
+> 2. Use **Manage the table** → select **Duplicates** → **Apply** (this shows a Duplicates column). [2]
+> 3. In the **Duplicates** column, use the filter icon and filter on **Duplicate** to show only the duplicated entries. [2]
+> 4. Open a duplicated registration (click **Reg #** or **Name**) to see the **“Duplicated with”** banner and the matching field. [2]
+> 5. Then choose one of the actions:
+>    - **Edit** the value in the registration profile (and click **Save** with a reason), or
+>    - **Decline** the duplicate (requires a reason), or
+>    - **Ignore the duplicate** (if your SOPs allow it). [2]
+>
+> Note: duplicates can only be checked **within a single project/program** (not across different programs). [2]
+>
+> If you tell me which field is triggering the duplicate (e.g., phone number vs ID), I can point you to the most appropriate option (ignore vs edit vs decline) based on the platform guidance.
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Deduplication](https://manual.121.global/en/registration/registration-deduplication/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Registrations page](https://manual.121.global/en/registration/registrations-page/)
+> - [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
+>
+> </details>
+>
+> `trace: 5a8710be690770cff748bfc03de690fe`
 
-It sounds like you have duplicate registrations in your list. In 121, duplicates can be checked and handled from the **Registrations** page, and duplicates are identified using unique criteria (commonly things like **phone number** or **ID number**) configured in your Kobo form. [2][4]
+> [!NOTE]
+> **User**
+>
+> how i delet the one that is dubbel
 
-To resolve duplicates:
-1. Go to the **Registrations** page.
-2. Use **Manage the table** → select **Duplicates** → **Apply** (this shows a **Duplicates** column). [2]
-3. In the **Duplicates** column, use the filter icon and filter on **Duplicate** to show only the duplicated entries. [2]
-4. Open a duplicated registration (click **Reg #** or **Name**) to see the banner **“Duplicated with”** and the matching field. [2]
-5. Then choose one of the actions:
-   - **Edit** the value in the registration profile (and click **Save** with a reason), or
-   - **Decline** the registration (requires a reason), or
-   - **Ignore the duplicate** (if your SOPs allow it). [2]
-
-If you tell me which action you want to take (**edit / decline / ignore**) and what field is causing the duplicate (e.g., phone or ID), I can point you to the right option.
-
-<details><summary>Sources</summary>
-
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Deduplication](https://manual.121.global/en/registration/registration-deduplication/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Registrations page](https://manual.121.global/en/registration/registrations-page/)
-- [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
-
-</details>
-
-`trace: 354923b95bb7d7adaab1e0015f5a4b05`
-
-**User:** how i delet the one that is dubbel
-
-**Chatbot:**
-
-In 121 you don’t “delete” a duplicate entry. Instead, you resolve it by either **Declining** it (remove it from being included) or **Ignoring** it (keep it as unique per your SOPs). [1]
-
-### To decline the duplicate registration
-1. Go to the **Registrations** page and filter to show duplicates (Duplicates column → filter **Duplicate**). [1]
-2. Find the duplicate registration and open its profile (click **Reg #**). [1]
-3. On the top left, click **Action** → **Decline**. [1]
-4. **Approve** the action (only if you’re sure). [1]
-5. Enter a **reason** for declining the beneficiary, then confirm. [1]
-
-If you accidentally declined it, you can change it back to **Included** (it’s reversible). [1]
-
-Do you want to **decline** the duplicate, or **ignore** it because your SOPs allow shared values (like the same phone number)?
-
-<details><summary>Sources</summary>
-
-- [Deduplication](https://manual.121.global/en/registration/registration-deduplication/)
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Registrations page](https://manual.121.global/en/registration/registrations-page/)
-- [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
-
-</details>
-
-`trace: 907e166e2e7372ebecd5953a0830eb54`
+> [!TIP]
+> **Chatbot**
+>
+> In 121 you don’t “delete” a duplicate record directly. Instead, you resolve it in the **Deduplication** workflow by either **declining** it (removes it from being treated as a valid registration) or **ignoring** it, depending on your SOPs. [1]
+>
+> ### To decline the duplicate registration
+> 1. Go to the **Registrations** page and filter to show duplicates (Duplicates column → filter on **Duplicate**). [1]
+> 2. Find the duplicate and open its profile (click **Reg #**). [1]
+> 3. On the top left, click **Action** → **Decline**. [1]
+> 4. **Approve** the action (only if you’re sure). [1]
+> 5. Enter a **reason for declining** the beneficiary, then confirm. [1]
+>
+> ### If you meant “remove it from the list”
+> If your SOP allows it, you can also use **Ignore the duplicate** (Action → **Ignore the duplicate** → Approve). [1]
+>
+> If you tell me whether your duplicates are based on **phone number** or **ID number**, I can help you choose between **Decline** vs **Ignore**.
+>
+> <details><summary>Sources</summary>
+>
+> - [Deduplication](https://manual.121.global/en/registration/registration-deduplication/)
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Registrations page](https://manual.121.global/en/registration/registrations-page/)
+> - [Validate registrations](https://manual.121.global/en/registration/registration-validate-pa/)
+> - [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
+>
+> </details>
+>
+> `trace: 805eff3b8b8c43a5c35a3228ca85acd4`
 
 ## Conversation 7
 
-`session: 2c549d23-f92f-4f1f-8782-38003e0384f8`
+`session: 238172ba-6733-48b6-85cf-bd56bd633ad8`
 
-**User:** i want to send a sms to all the famlies in my list
+> [!NOTE]
+> **User**
+>
+> i want to send a sms to all the famlies in my list
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> To send an SMS to all families in your registrations list, you can use the **“Send a message to registrations”** option on the **Registrations** page (this sends outbound messages via **SMS or WhatsApp**). [1]
+>
+> Before you can send SMS, you must:
+> 1) **Create a Twilio account** and have it linked to your 121 Platform instance (121 support helps with the technical integration). [1]  
+> 2) Ensure you have **sufficient messaging credits/funds** in Twilio—otherwise SMS/WhatsApp will fail. [1]
+>
+> Then, in the **Registrations page**:
+> - Select the registrations you want to message (for “all families”, select all registrations in the list/table).
+> - Click the **Message** icon/button at the top of the page.
+> - Choose **Custom message** (or a **predefined template**, if you have one set up).
+> - (Optional) Use **variables** with **@** to insert fields from each registration automatically (e.g., @name, @amount). [1]
+>
+> If you tell me whether you want to use a **custom message** or a **predefined template**, I can guide you through the exact clicks for that option.
+>
+> <details><summary>Sources</summary>
+>
+> - [Sending messages](https://manual.121.global/en/registration/sending-messages/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
+> - [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+>
+> </details>
+>
+> `trace: 0cb258ba2abc63495f201361ce925177`
 
-To send an SMS to all families in your registrations list, you can use the **“Send a message to registrations”** option in the **Registrations** page (for actions like Including/Declining/Payments). [1]
+> [!NOTE]
+> **User**
+>
+> can i writ there name inside the mesage
 
-Before you can send SMS, you must:
-1) **Enable messaging** by creating a **Twilio account** and ensuring you have **sufficient messaging credits** (contact 121 support to set up the integration). [1]  
-2) Make sure your **phone numbers are in international format** (121 won’t automatically reformat them). [1]  
-3) **Top up your Twilio account** so messages don’t fail due to insufficient funds. [1]
-
-Then, in the **Registrations page**:
-- Select the registrations you want to message (for “all families”, select all from the list),
-- Click the **Message** icon,
-- Choose **Custom message** (or a **predefined template**, if you’ve set those up),
-- (Optional) Use **variables** with `@` to personalize fields per registration. [1]
-
-If you tell me whether you want to use a **custom message** or a **predefined template**, I can point you to the exact option to choose in the Message menu.
-
-<details><summary>Sources</summary>
-
-- [Sending messages](https://manual.121.global/en/registration/sending-messages/)
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
-- [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-
-</details>
-
-`trace: 3d8e899b671bbbd90681059be5639588`
-
-**User:** can i writ there name inside the mesage
-
-**Chatbot:**
-
-Yes. You can insert each family/individual’s name in the SMS using a **variable**.
-
-In the **Custom message** editor:
-- Type `@`
-- Select the field for the person’s name (e.g., `@name`)
-- The message will automatically use the correct value for each registration. [1]
-
-<details><summary>Sources</summary>
-
-- [Sending messages](https://manual.121.global/en/registration/sending-messages/)
-- [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
-- [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
-- [Add team members](https://manual.121.global/en/team/add-team-members/)
-- [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
-
-</details>
-
-`trace: bdb40f71911f0881d38209650b43aa87`
+> [!TIP]
+> **Chatbot**
+>
+> Yes. You can insert each person’s name in the message using a **variable**.
+>
+> In the **Custom message** editor:
+> - Type **@**
+> - Select the field for the name (e.g., **@name**)
+> - The message will automatically pull the name from each registration and adjust per person. [1]
+>
+> <details><summary>Sources</summary>
+>
+> - [Sending messages](https://manual.121.global/en/registration/sending-messages/)
+> - [Decline registrations](https://manual.121.global/en/registration/registration-reject-pa/)
+> - [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
+> - [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+>
+> </details>
+>
+> `trace: 8fa3c577184e7ccd6fca1706b0468054`
 
 ## Conversation 8
 
-`session: 18936f1e-c5fe-4772-93bf-1ea8e7ffe85a`
+`session: 123ff6a4-3860-43ad-ab8d-e12c94019637`
 
-**User:** how much money evry famly get and can i chang that
+> [!NOTE]
+> **User**
+>
+> how much money evry famly get and can i chang that
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> I'm here to help with questions about 121, so I can't help with that one.  
+> Is there something about 121 I can help you with?
+>
+> `trace: 9a7f806a3770a9971f237508e47dd9c5`
 
-On 121, the **amount each family/registration receives** is controlled by your program’s **Budget & Payment settings**—specifically the **base transfer value / fixed transfer value** and related budget/payment fields. These settings can be **changed at any time**, and **all changes take effect immediately and apply to the entire registration list**. [5]
+> [!NOTE]
+> **User**
+>
+> if the famly have many childrin do they get more
 
-**Can you change it?**  
-You can update these settings if you have **Program Admin** or **Program Update** permissions. [5]
-
-If you tell me what role you have on the program (e.g., Program Admin, Program Update, View only), I can point you to the exact place to check/edit.
-
-<details><summary>Sources</summary>
-
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
-- [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
-- [End payments](https://manual.121.global/en/payment/end-payments/)
-- [Budget & Payment settings](https://manual.121.global/en/Settings/payment-budget-settings/)
-
-</details>
-
-`trace: 7155be29a2bc6542a23e9f5b4fb4b85d`
-
-**User:** if the famly have many childrin do they get more
-
-**Chatbot:**
-
-I don’t have enough information in the 121 manual documents provided to confirm whether families with more children receive more money automatically.
-
-What I *can* say from the documents is that the amount a registration receives is determined by the program’s **Budget & Payment settings** (e.g., base/fixed transfer value and related budget/payment fields), and those settings can be updated by users with the right permissions. [5]
-
-If you share whether your program uses a **fixed transfer value** or any **per-person/per-household** logic in your setup, I can help you interpret what the platform will do based on that.
-
-<details><summary>Sources</summary>
-
-- [Program Info & Settings](https://manual.121.global/en/Settings/project-info/)
-- [Include registrations](https://manual.121.global/en/registration/inclusion-in-program/)
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Budget & Payment settings](https://manual.121.global/en/Settings/payment-budget-settings/)
-- [Program Settings page](https://manual.121.global/en/Settings/project-settings-page/)
-
-</details>
-
-`trace: 6c33c0af961afad537c4f63bcba095bc`
+> [!TIP]
+> **Chatbot**
+>
+> I don't have the right information to answer your question. Could you share more details with me?
+>
+> <details><summary>Sources</summary>
+>
+> - [Financial Service Providers (FSP)](https://manual.121.global/en/faq/financial-service-provider/)
+> - [Payments page](https://manual.121.global/en/payment/payment/)
+> - [End payments](https://manual.121.global/en/payment/end-payments/)
+> - [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
+> - [Budget & Payment settings](https://manual.121.global/en/Settings/payment-budget-settings/)
+>
+> </details>
+>
+> `trace: 315a31dd5653369ae4e0d0bbaaddb3e8`
 
 ## Conversation 9
 
-`session: 202810eb-3d3a-4ca5-895e-4d2f17cf2f4a`
+`session: 82fd8dfb-bae7-406d-8846-949c247fb9af`
 
-**User:** i give the cash with my hand to the peple how i writ it in the sistem after
+> [!NOTE]
+> **User**
+>
+> i give the cash with my hand to the peple how i writ it in the sistem after
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> It sounds like you’re asking how to record **cash you gave by hand** in the 121 system.
+>
+> From the 121 manual pages I have here, the “Payments” workflow is specifically about **processing payments through a Financial Service Provider (FSP)**—either:
+> - **Manual payment via an FSP portal** (export payment instructions, then reconcile using a CSV reconciliation file), or
+> - **Instant/direct payments with an integrated FSP** (status updates automatically). [1][2][3][5]
+>
+> I don’t have instructions in the provided documents for how to record **cash-in-hand / manual cash distribution without an FSP**.
+>
+> Can you tell me which one matches your situation?
+> 1) Are you using an **FSP portal** (manual export/import + reconciliation CSV)? [1][5]  
+> 2) Or do you have an **integrated FSP** (instant payment)? [4]  
+> 3) Or is this **cash given directly by staff** with **no FSP** involved?
+>
+> <details><summary>Sources</summary>
+>
+> - [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
+> - [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
+> - [Payments page](https://manual.121.global/en/payment/payment/)
+> - [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
+> - [Reconcile manual payments](https://manual.121.global/en/payment/manual-payment-reconciliation/)
+>
+> </details>
+>
+> `trace: 660713c4c1dacfab9b8485bbbe3cb75a`
 
-It sounds like you’re asking how to record **cash you gave by hand** in the 121 system.
+> [!NOTE]
+> **User**
+>
+> what colums i must put in that file
 
-From the 121 manual content I have here, the “Payments” workflow described is for **digital cash distribution** (e.g., mobile money, prepaid cards, bank transfers) and for **manual payments via an FSP portal** (export/import + reconciliation). It doesn’t explain the specific steps for recording **hand-delivered physical cash** directly in the system. [3]
-
-If you tell me which payment method your program uses in 121 (e.g., **FSP portal/manual export**, **integrated FSP/instant payment**, or something else), I can point you to the closest matching 121 steps from the manual.
-
-<details><summary>Sources</summary>
-
-- [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
-- [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
-- [Reconcile manual payments](https://manual.121.global/en/payment/manual-payment-reconciliation/)
-
-</details>
-
-`trace: cf7de66280c8f587cabf86b7747826a1`
-
-**User:** what colums i must put in that file
-
-**Chatbot:**
-
-For manual payments via an **FSP portal**, the reconciliation/import file must be in **.csv** format, and you must ensure the **payment status labels** match 121’s expected values: **Completed → success**, **Failed → error**, **Pending → waiting**. [2]
-
-However, the manual content I have here does **not** list the exact column names you must include in the reconciliation file (it only says to use the provided template and ensure required columns are included). [2][3]
-
-What I can confirm from the manual:
-- Use the **template** by going to **Payments → Import reconciliation data → Download template**. [3]
-- Save your updated file as **.csv** before importing. [3]
-- When importing, upload the **.csv** file via **Import reconciliation data** on the specific payment round. [2][3]
-
-If you share whether you mean the **payment instructions file** (export to the FSP) or the **reconciliation file** (import back from the FSP), I can guide you to the right template steps.
-
-<details><summary>Sources</summary>
-
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
-- [Reconcile manual payments](https://manual.121.global/en/payment/manual-payment-reconciliation/)
-- [Payment statuses in 121](https://manual.121.global/en/payment/list-status-payment-page/)
-- [Payment reporting and activty](https://manual.121.global/en/payment/payment-reporting/)
-
-</details>
-
-`trace: 512ad9789541c2d98868cf6eb24a9294`
+> [!TIP]
+> **Chatbot**
+>
+> For manual payment reconciliation in 121, the file you import must be a **.csv** and it must include the **required columns** from the **template** you download in 121. [1][2]
+>
+> In the documents I have, the exact column names beyond the payment status labels aren’t listed—so the safest answer is:
+>
+> 1) Go to **Payments** → select the specific **payment round**  
+> 2) Click **Import Reconciliation data** → **Download template**  
+> 3) Edit that template and keep all required columns, then save as **.csv** and import it back. [1][2]
+>
+> Also, you must overwrite the payment status values to match 121 exactly: [1][2]  
+> - **Completed** → `success`  
+> - **Failed** → `error`  
+> - **Pending** → `waiting`  
+>
+> If you tell me which FSP you used (or share the header row from your template), I can help you confirm the columns you should keep.
+>
+> <details><summary>Sources</summary>
+>
+> - [Reconcile manual payments](https://manual.121.global/en/payment/manual-payment-reconciliation/)
+> - [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
+> - [Payments page](https://manual.121.global/en/payment/payment/)
+> - [Payment statuses in 121](https://manual.121.global/en/payment/list-status-payment-page/)
+> - [Payment reporting and activty](https://manual.121.global/en/payment/payment-reporting/)
+>
+> </details>
+>
+> `trace: 53e825c411d13728c1699c2f708cb08f`
 
 ## Conversation 10
 
-`session: d50f83a1-4483-4bf4-817a-05738eb1267a`
+`session: c9c65f58-285a-4c13-ba78-bfe63f0c5537`
 
-**User:** helo good morning
+> [!NOTE]
+> **User**
+>
+> helo good morning
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> Good morning! 👋 How can I help you with questions about 121 today?
+>
+> `trace: f8d2317cd23e751375b4b3bab22f5b44`
 
-Good morning! 👋 How can I help you with questions about 121 today?
+> [!NOTE]
+> **User**
+>
+> how i take the list of peple to my computer
 
-`trace: d204064a8e273d8331628e5abfb3ee7d`
+> [!TIP]
+> **Chatbot**
+>
+> To take a list of people to your computer, you can **export registrations** from the **Registrations** page in 121. [2]
+>
+> 1. Open your **Program** → go to the **Registrations** page.  
+> 2. (Optional) Use **Settings** to add the columns you want to see in the table, then click **Apply**. [2]  
+> 3. Select the registrations you want to export.  
+> 4. Click **Export** (top right of the table) → choose **Export selected registrations**. [2]  
+> 5. Choose the file format (**Excel or CSV**). The file will be generated and saved in your **Downloads** folder. [2]
+>
+> If you tell me whether you want **Excel or CSV**, I can point you to the exact option to choose.
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
+>
+> </details>
+>
+> `trace: 1d084ec6c9753146f517fc7d58a648c4`
 
-**User:** how i take the list of peple to my computer
+> [!NOTE]
+> **User**
+>
+> ok tank you very much
 
-**Chatbot:**
-
-To take the registrations list to your computer, you can **export it from the 121 Platform**:
-
-1. Go to the **Registrations** page (for your program).
-2. Make sure your table view shows the columns you want (use **Settings** → select columns → **Apply**).  
-   *Only visible columns are included in the export.* [1]
-3. Select the registrations you want to export.
-4. Click **Export** (top right of the table).
-5. Choose **Export selected registrations**.
-6. Select the file format (**Excel** or **CSV**).
-7. The file will be generated and saved in your **Downloads** folder. [1]
-
-If you tell me whether you want **Excel or CSV**, I can guide you on the best option for your next step.
-
-<details><summary>Sources</summary>
-
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-- [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
-
-</details>
-
-`trace: e0b801a078993c52c4cb125e92d97900`
-
-**User:** ok tank you very much
-
-**Chatbot:**
-
-You’re welcome! 😊 If you have any more questions about 121, just tell me.
-
-<details><summary>Sources</summary>
-
-- [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
-- [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
-- [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
-- [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
-- [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
-
-</details>
-
-`trace: f10a70f3f4716f37417dd39e922408da`
+> [!TIP]
+> **Chatbot**
+>
+> You’re welcome! If you have any more questions about 121, feel free to ask.
+>
+> <details><summary>Sources</summary>
+>
+> - [Import Registrations with excel](https://manual.121.global/en/registration/registration-import-list/)
+> - [Export registration lists](https://manual.121.global/en/registration/registration-export-list/)
+> - [Import Mass Data Changes](https://manual.121.global/en/registration/import-data-changes/)
+> - [Registration with KOBO form](https://manual.121.global/en/registration/registration-automatic-import-kobo/)
+> - [Offline Verification with 121 and Kobo Toolbox](https://manual.121.global/en/verification/offline-verification/)
+>
+> </details>
+>
+> `trace: 7a2c074211102b0eb65949e6e893fa39`
 
 ## Conversation 11
 
-`session: 6d20fcae-61c5-402e-9f36-6b9d34c0e486`
+`session: ffd9a6b6-7211-4d23-9a7d-5a6b487f4e0c`
 
-**User:** waht is the wether in nairobi tomorow
+> [!NOTE]
+> **User**
+>
+> waht is the wether in nairobi tomorow
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> I'm here to help with questions about 121, so I can't help with that one.
+> Is there something about 121 I can help you with?
+>
+> `trace: 1ef78f7b5e4b9f7f317d45b2bbc26285`
 
-I'm here to help with questions about 121, so I can't help with that one.  
-Is there something about 121 I can help you with?
+> [!NOTE]
+> **User**
+>
+> ok sory. can u tel me how i add a new persn
 
-`trace: 91d29caddafcf60bf5ae81f5f44e6780`
-
-**User:** ok sory. can u tel me how i add a new persn
-
-**Chatbot:**
-
-Sure. To add a new person to 121, you first need to create their **121 user account** (so they receive login credentials), and then (optionally) add them to the specific **program(s)** they should access. [1][2]
-
-## 1) Add the new user account (Users page)
-- On the left menu, open **Users**.
-- On the top right of the **Users** page, click **Add new users**.
-- Enter the **Name(s)** and **email address**.
-- Click **Submit**. [1]
-
-**Note:** An email is automatically sent to the address you enter—make sure the email is correct so the user receives the access link/credentials. [1]
-
-## 2) Add them to a program (Program Team)
-If you want them to access a specific program:
-- Go to the program **Settings** page → **Program Team** tab.
-- Click the **pencil** (edit).
-- Click **+ Add user to team**.
-- Search by the user’s **email address**.
-- Under **Assign Roles**, tick the role(s) they should have.
-- Click **Submit**. [2]
-
-**Important:** Users must be added to each individual program they’re assigned to; it doesn’t happen automatically when you create their user account. [2]
-
-If you tell me whether you’re trying to add them to a **program** as well (and which one), I can guide you through the right steps.
-
-<details><summary>Sources</summary>
-
-- [Add User to 121](https://manual.121.global/en/users/add-users/)
-- [Add team members](https://manual.121.global/en/team/add-team-members/)
-- [Remove team members](https://manual.121.global/en/team/remove-team-members-program/)
-- [Support](https://manual.121.global/en/general/support-contact/)
-- [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
-
-</details>
-
-`trace: a1ea36e3f65c6b6f71a54e4931f86d41`
+> [!TIP]
+> **Chatbot**
+>
+> Sure—on 121 you add a new person by creating a **user account** first, then (optionally) adding them to the **specific program(s)** they should access.
+>
+> ### 1) Add the user account (Users page)
+> - Open the left menu and select **Users**. [2]
+> - Click **Add new users** (top right). [2]
+> - Enter the **Name(s)** and **email address**.
+> - Click **Submit**. [2]
+>
+> An email will be automatically sent to the address you enter with a link for the user to access the 121 platform. Make sure the email is correct. [2]
+>
+> ### 2) Add them to a program (Program Team)
+> - Go to the program’s **Settings** page.
+> - Under **Program Team**, click the **pencil** icon.
+> - Select **+ Add user to team**.
+> - Search by the user’s **email** and select them.
+> - Under **Assign Roles**, tick the role(s) you want.
+> - Click **Submit**. [1]
+>
+> **Note:** Adding a user account does not automatically assign them to programs—each program assignment must be done separately. [2]
+>
+> If you tell me whether you’re adding them to a program already (and which one), I can guide you through the exact steps for that screen.
+>
+> <details><summary>Sources</summary>
+>
+> - [Add team members](https://manual.121.global/en/team/add-team-members/)
+> - [Add User to 121](https://manual.121.global/en/users/add-users/)
+> - [Edit registration details](https://manual.121.global/en/registration/edit-pa-profile/)
+> - [Change team members roles](https://manual.121.global/en/team/change-team-roles-program/)
+> - [Manage your program team](https://manual.121.global/en/team/team-page/)
+>
+> </details>
+>
+> `trace: 992c802140cb5e330342baef25378384`
 
 ## Conversation 12
 
-`session: da5b0ad2-f4e4-4d25-ad1f-dea0bfaeab24`
+`session: fde8cd10-b26c-46c3-9fd6-81ef6a2170b8`
 
-**User:** nothing is wrking the hole day and my boss is angry with me
+> [!NOTE]
+> **User**
+>
+> nothing is wrking the hole day and my boss is angry with me
 
-**Chatbot:**
+> [!TIP]
+> **Chatbot**
+>
+> I’m sorry you’re dealing with this. Based on the 121 manual, if the **Registrations** page is empty or not showing data, the most common causes are:
+>
+> 1) **No new registration imported** → the table will show **“No data”**. [1]  
+> 2) **No internet connection** (especially if you’re using KOBO Toolbox/offline registration) → you must connect to the internet, start the upload with KOBO, then **refresh the registration page**. [1]  
+> 3) **Filters/search are applied** → clear them (click **Clear filters** on the top right). [1]  
+> 4) If the page is **fully blank** and doesn’t even show the registration column, it may be a **technical issue** → contact support. [1]
+>
+> If you tell me which page is blank/empty (Registrations? Payments? something else) and what you see (e.g., “No data” vs fully blank), I can guide you to the right check.  
+>
+> For urgent technical issues, you can contact support via **instant channels** or email **support@121.global** (and copy your Account Manager). [2]
+>
+> <details><summary>Sources</summary>
+>
+> - [What if I see empty page](https://manual.121.global/en/registration/registration-list-empty/)
+> - [Support](https://manual.121.global/en/general/support-contact/)
+> - [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
+> - [Reset password](https://manual.121.global/en/general/reset-password/)
+> - [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
+>
+> </details>
+>
+> `trace: e2b6f385bb011fd23748dd1bf365f47d`
 
-I’m sorry you’re dealing with this. Based on 121’s guidance, an empty/blank page in the **Registrations** table can happen for a few reasons:
+> [!NOTE]
+> **User**
+>
+> the paymnt still not go out i dont know what to do anymor
 
-1) **No new registration imported**  
-- The table will show **“No data”** if there’s nothing new to display. [1]
-
-2) **No Internet connection (KOBO/registration form import)**  
-- If you’re using KOBO Toolbox (or an alternative registration form) and you don’t have internet, the list may not import into 121.  
-- To fix: connect to the internet → start the upload with KOBO → once done, **refresh the registration page**. [1]
-
-3) **Filters are applied**  
-- Clear any search/filter settings: make sure the filter/search bar is empty, and if you see a filter under the search bar, click **“Clear filters”** (top right). [1]
-
-4) **Fully blank page (technical issue)**  
-- If the page is completely blank and doesn’t show the registration column, it may be a technical issue—then you should contact support. [1]
-
-If you tell me which page you’re seeing (Registrations or Payments) and whether it’s **“No data”**, **blank**, or showing **registrations but not the ones you expect**, I can point you to the most likely fix.
-
-<details><summary>Sources</summary>
-
-- [What if I see empty page](https://manual.121.global/en/registration/registration-list-empty/)
-- [Support](https://manual.121.global/en/general/support-contact/)
-- [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
-- [Reset password](https://manual.121.global/en/general/reset-password/)
-- [Timeline](https://manual.121.global/en/faq/timeline-121-integration/)
-
-</details>
-
-`trace: 79c8009f73eabc24fe0baba3bcb3b8c5`
-
-**User:** the paymnt still not go out i dont know what to do anymor
-
-**Chatbot:**
-
-I understand—if the payment “still not go out,” the key is to check the **payment status** and then do the required next step.
-
-### 1) Check the payment status
-On the **Payments** page, payments move through statuses like **Pending approval**, **Approved**, and then **Processing** / **Successful** / **Failed**. [1]
-
-### 2) If it’s **Pending approval**
-- It can’t be sent yet.
-- An **approver** must approve it. [1]
-
-### 3) If it’s **Approved**
-- The **Finance Manager** must **start the payment**.
-- Open the approved payment card → click **Start payment** (top right).
-- After starting, statuses change from **Approved** to **Processing**. [1]
-
-### 4) If it’s **Processing** (manual payment via FSP portal)
-- The transfer isn’t considered complete until the **reconciliation file** is imported into 121.
-- Go to the specific payment page → **Import reconciliation data** → upload the **.csv** file → proceed.
-- This updates statuses to **Successful / Pending / Failed**. [3]
-
-### 5) If it’s **Failed**
-- You can retry only after identifying the reason (wrong details, reconciliation format, registration changed details, or integration issue).
-- Then use **Retry failed transaction(s)** (top right) and confirm **Retry transactions**. [2]
-
----
-
-If you paste the **exact status** you see (e.g., *Pending approval*, *Approved*, *Processing*, *Failed*) and whether you’re using **manual export-import** or an **integrated FSP**, I’ll tell you the exact next click(s) to take.
-
-<details><summary>Sources</summary>
-
-- [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
-- [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
-- [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
-- [Payments page](https://manual.121.global/en/payment/payment/)
-- [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
-
-</details>
-
-`trace: dfab76de150c033d8054540d702e9c44`
+> [!TIP]
+> **Chatbot**
+>
+> I understand—let’s narrow it down using the payment statuses in 121.
+>
+> ### 1) Check the payment status
+> Go to **Payments** and open the specific payment round. The status determines what you should do next:
+>
+> - **PENDING APPROVAL**: it can’t go out yet—**approvers must approve** it. [1]  
+> - **APPROVED**: it’s ready to be sent—**a Finance Manager must start the payment** (top right **Start payment**). [1]  
+> - **PROCESSING** (manual payment): it’s waiting for **reconciliation import**—you must **import the reconciliation file (.csv)** into the same payment page to update the status. [1][3]  
+> - **FAILED**: the transaction didn’t go out—check the **Reason** and then **retry failed transaction(s)** after fixing the cause. [2]
+>
+> ### 2) If it’s **FAILED**
+> - Filter the registration list to **Failed** and read the **Reason** column. [2]  
+> - Then use **Retry failed transaction(s)** (top right) and confirm **Retry transactions**. [2]
+>
+> ### 3) If it’s **PROCESSING** (manual export/import)
+> - Make sure the reconciliation file you import is **.csv** and uses the required status mapping:  
+>   **Completed → success**, **Failed → error**, **Pending → waiting**. [3]  
+> - Then click **Import reconciliation data** on the specific payment page and upload the file. [3]
+>
+> If you reply with the **exact status you see** (Pending approval / Approved / Processing / Failed) and whether you’re using **manual payment via FSP portal** or an **integrated FSP**, I’ll tell you the next exact step.
+>
+> <details><summary>Sources</summary>
+>
+> - [Create and Approve payments](https://manual.121.global/en/payment/create-approve-payment/)
+> - [Failed and Retry payments](https://manual.121.global/en/payment/failed-retry-payment/)
+> - [Manual payment instructions (excel export)](https://manual.121.global/en/payment/issue-payment-fsp-portal/)
+> - [Payments page](https://manual.121.global/en/payment/payment/)
+> - [Payments with integrated FSP](https://manual.121.global/en/payment/payment-integrated-fsp/)
+>
+> </details>
+>
+> `trace: 7bdbfd38dbbb69e6a515ccd854bce09f`
